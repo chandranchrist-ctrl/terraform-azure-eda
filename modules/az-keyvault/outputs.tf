@@ -26,7 +26,7 @@ output "sql_tde_key_id" {
   description = "SQL TDE Key ID"
 }
 
-output "acr_cmk_id" {
-  value       = azurerm_key_vault_key.acr_cmk.id
-  description = "ACR CMK Key ID"
-}
+# output "acr_cmk_id" {
+#   value       = azurerm_key_vault_key.acr_cmk.id
+#   description = "ACR CMK Key ID"
+# }
