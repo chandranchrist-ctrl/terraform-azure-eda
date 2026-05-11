@@ -66,9 +66,9 @@ module "virtual_network" {
   # VNet CIDR
   # {VNet key = hub\spoke} must match the corresponding key in subnet_address_space to map subnets to the correct VNet
   vnet_address_space = {
-    hub_vnet = ["10.0.0.0/16"]
+    hub_vnet   = ["10.0.0.0/16"]
     app_svnet  = ["172.16.0.0/16"]
-    data_svnet  = ["192.168.0.0/16"]
+    data_svnet = ["192.168.0.0/16"]
   }
 
   # Subnet CIDR
@@ -136,66 +136,66 @@ module "vnet_peering" {
 
   peerings = {
     hub_to_app = {
-      name              = "${local.env}-hub-to-app"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["hub_vnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["app_svnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-hub-to-app"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["hub_vnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["app_svnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
     },
 
     app_to_hub = {
-      name              = "${local.env}-app-to-hub"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["app_svnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["hub_vnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-app-to-hub"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["app_svnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["hub_vnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
     },
 
     hub_to_data = {
-      name              = "${local.env}-hub-to-data"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["hub_vnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["data_svnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-hub-to-data"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["hub_vnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["data_svnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
     },
 
     data_to_hub = {
-      name              = "${local.env}-data-to-hub"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["data_svnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["hub_vnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-data-to-hub"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["data_svnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["hub_vnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
     },
 
     app_to_data = {
-      name              = "${local.env}-app-to-data"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["app_svnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["data_svnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-app-to-data"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["app_svnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["data_svnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
     },
 
     data_to_app = {
-      name              = "${local.env}-data-to-app"
-      resource_group    = module.rg.resource_group_name
-      vnet_name         = module.virtual_network.vnets["data_svnet"].name
-      remote_vnet_id    = module.virtual_network.vnets["app_svnet"].id
-      allow_vnet_access = true
+      name                    = "${local.env}-data-to-app"
+      resource_group          = module.rg.resource_group_name
+      vnet_name               = module.virtual_network.vnets["data_svnet"].name
+      remote_vnet_id          = module.virtual_network.vnets["app_svnet"].id
+      allow_vnet_access       = true
       allow_forwarded_traffic = true
       allow_gateway_transit   = false
       use_remote_gateways     = false
@@ -212,7 +212,7 @@ module "private_dns" {
 
   /* list of private DNS zones to create */
   zones = [
-    "privatelink.database.windows.net", 
+    "privatelink.database.windows.net",
     "privatelink.blob.core.windows.net",
     "privatelink.queue.core.windows.net", /* Private DNS zone for Azure Storage (Queue) private endpoints */
     "privatelink.vaultcore.azure.net",
