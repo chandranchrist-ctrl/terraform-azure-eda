@@ -1,0 +1,15 @@
+# Terraform files — always LF
+*.tf       text eol=lf
+*.tfvars   text eol=lf
+*.hcl      text eol=lf
+*.lock.hcl text eol=lf
+
+# Shell scripts — LF
+*.sh       text eol=lf
+
+# Ignore binary files for line endings
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.zip      binary
+*.exe      binary
