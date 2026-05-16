@@ -21,10 +21,10 @@ output "certificate_secret_ids" {
   description = "Map of all certificate names to secret IDs"
 }
 
-output "sql_tde_key_id" {
-  value       = azurerm_key_vault_key.sql_tde_key.id
-  description = "SQL TDE Key ID"
-}
+# output "sql_tde_key_id" {
+#   value       = azurerm_key_vault_key.sql_tde_key.id
+#   description = "SQL TDE Key ID"
+# }
 
 # output "acr_cmk_id" {
 #   value       = azurerm_key_vault_key.acr_cmk.id

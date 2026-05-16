@@ -56,7 +56,7 @@ variable "asg_map" {
   default = {}
 }
 
-variable "jhost_allowed_sources" {
+variable "allowed_sources" {
   type    = list(string)
   default = []
 }

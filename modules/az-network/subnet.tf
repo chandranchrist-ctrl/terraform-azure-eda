@@ -28,6 +28,10 @@ resource "azurerm_subnet" "subnet" {
   virtual_network_name = azurerm_virtual_network.vnet[each.value.vnet_key].name
   address_prefixes     = each.value.cidr
 
+  depends_on = [
+    azurerm_virtual_network.vnet
+  ]
+
   default_outbound_access_enabled = var.default_outbound_access_enabled
 
   service_endpoints = [

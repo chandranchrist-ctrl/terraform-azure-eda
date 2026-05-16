@@ -27,6 +27,11 @@ resource "azurerm_subnet_network_security_group_association" "nsg_assoc" {
   subnet_id = azurerm_subnet.subnet[each.key].id
 
   network_security_group_id = azurerm_network_security_group.nsg[each.key].id
+
+  depends_on = [
+    azurerm_subnet.subnet,
+    azurerm_network_security_group.nsg
+  ]
 }
 
 
@@ -98,6 +103,10 @@ resource "azurerm_network_security_rule" "nsg_rule" {
   # Metadata
   resource_group_name         = var.resource_group_name
   network_security_group_name = azurerm_network_security_group.nsg[each.value.subnet_key].name
+
+  depends_on = [
+    azurerm_network_security_group.nsg
+  ]
 }
 
 

@@ -17,7 +17,7 @@ variable "appservice_storage_account_name" {
   type = string
 }
 
-variable "mysql_storage_account_name" {
+variable "mssql_storage_account_name" {
   type = string
 }
 

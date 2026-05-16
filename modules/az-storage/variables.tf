@@ -74,3 +74,11 @@ variable "enable_sas" {
   type    = bool
   default = true
 }
+
+variable "scripts" {
+  type = map(object({
+    container = string
+    path      = string
+  }))
+  default = {}
+}
