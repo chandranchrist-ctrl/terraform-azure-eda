@@ -23,7 +23,7 @@ variable "vmss_name" {
   type = string
 }
 
-variable "vm_count" {
+variable "instances" {
   type    = number
   default = 2
 }
@@ -209,5 +209,9 @@ variable "private_dns_zone_name" {
 }
 
 variable "lb_private_ip" {
+  type = string
+}
+
+variable "api_dns_name" {
   type = string
 }

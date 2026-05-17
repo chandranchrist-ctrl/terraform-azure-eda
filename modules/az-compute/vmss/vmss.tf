@@ -1,6 +1,6 @@
 locals {
   vmss_instances = [
-    for i in range(var.vm_count) :
+    for i in range(var.instances) :
     format("%s%02d", var.vmss_name, i + 1)
   ]
 
@@ -36,7 +36,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
   resource_group_name = var.resource_group_name
 
   sku       = var.vm_size
-  instances = var.vm_count
+  instances = var.instances
 
   computer_name_prefix = var.vmss_name
 

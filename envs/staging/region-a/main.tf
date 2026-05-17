@@ -282,8 +282,8 @@ module "key_vault" {
 
     /* Stores GoDaddy API credentials (API Key and Secret) as a JSON-encoded string, typically used for programmatic DNS management or domain automation */
     godaddy-apikey = jsonencode({
-      Key    = "hkHptCfQoPVe_S64u3fVz88NYAZwGPuE9ir"
-      Secret = "QLsAdAfb4pLq4VsVMQ2gFT"
+      Key    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
+      Secret = "ECkifJCPVySofRBCAqjG2Y"
     })
   }
 
@@ -492,7 +492,7 @@ module "vmss" {
   vm_size = "Standard_D2s_v5"
 
   vmss_name = "${local.env}-wvmss"
-  vm_count  = 1
+  instances = 1
 
   image_publisher = "MicrosoftWindowsServer"
   image_offer     = "WindowsServer"
@@ -525,6 +525,7 @@ module "vmss" {
 
   enable_dns_record     = true
   private_dns_zone_name = "internal.hbcdev.co.in"
+  api_dns_name          = "uat-eda-api"
   lb_private_ip         = module.loadbalancer.private_ip
 
   enable_boot_diagnostics               = false
@@ -551,8 +552,7 @@ module "vmss" {
 
   enable_backup = false
 
-  enable_autoscale = false
-
+  enable_autoscale           = false
   autoscale_min_capacity     = 1
   autoscale_max_capacity     = 3
   autoscale_default_capacity = 1
@@ -598,3 +598,46 @@ module "loadbalancer" {
   private_dns_zone_name = "internal.hbcdev.co.in"
 }
 
+# NAT Gateway Module
+module "nat_app" {
+  source = "../../../modules/az-nat-gateway"
+
+  name                = "${local.env}-${local.workload}-natgw-app"
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+  tags                = module.rg.tags
+
+  enable_nat_gateway      = true
+  enable_public_ip        = true
+  enable_public_ip_prefix = false
+
+  subnet_ids = {
+    vmss = module.virtual_network.subnet_lookup["vmss"]
+  }
+}
+
+
+module "static_web_app_r1" {
+
+  source = "../../../modules/az-static-web-app"
+
+  name                = "${local.env}-${local.workload}-swa-r1"
+  location            = "eastasia"
+  resource_group_name = module.rg.resource_group_name
+
+  tags = module.rg.tags
+
+  api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+
+  custom_domain = "uat-eda-r1.hbcdev.co.in"
+
+  domain        = "hbcdev.co.in"
+  hostname_only = "uat-eda-r1"
+
+  key_vault_id        = module.key_vault.key_vault_id
+  godaddy_secret_name = "godaddy-apikey"
+
+  depends_on = [
+    module.key_vault
+  ]
+}
