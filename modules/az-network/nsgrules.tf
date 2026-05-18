@@ -33,6 +33,21 @@ locals {
 
         source_asg = null
         dest_asg   = null
+      },
+      {
+        name                   = "allow-functions"
+        priority               = 102
+        direction              = "Inbound"
+        access                 = "Allow"
+        protocol               = "Tcp"
+        source_port_range      = "*"
+        destination_port_range = "1433"
+
+        source_address_prefix      = "172.16.3.0/24"
+        destination_address_prefix = "*"
+
+        source_asg = null
+        dest_asg   = null
       }
     ]
 

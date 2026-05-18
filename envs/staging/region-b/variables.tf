@@ -13,15 +13,11 @@ variable "diag_storage_account_name" {
   type = string
 }
 
-variable "appservice_storage_account_name" {
-  type = string
-}
-
 variable "mssql_storage_account_name" {
   type = string
 }
 
-variable "custom_script_storage_account_name" {
+variable "eda_storage_account_name" {
   type = string
 }
 

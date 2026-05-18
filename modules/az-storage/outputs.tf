@@ -34,3 +34,14 @@ output "sas_urls" {
 
   sensitive = true
 }
+
+output "queue_names" {
+  value = var.queues
+}
+
+output "queue_urls" {
+  value = {
+    for q in var.queues :
+    q => "https://${azurerm_storage_account.storage_account.name}.queue.core.windows.net/${q}"
+  }
+}

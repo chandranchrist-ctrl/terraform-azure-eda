@@ -280,6 +280,11 @@ module "key_vault" {
       admin-password = "Qwerty123!",
     })
 
+    mssql-credentials = jsonencode({
+      username = "sqladmin"
+      password = "SQLP@ssw0rd!23!"
+    })
+
     /* Stores GoDaddy API credentials (API Key and Secret) as a JSON-encoded string, typically used for programmatic DNS management or domain automation */
     godaddy-apikey = jsonencode({
       Key    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
@@ -347,6 +352,11 @@ module "diag_storage_account" {
 
   allowed_ip_rules = var.allowed_ips_plain # ["49.37.211.93"] /* allows access from specific public IPs */
 
+  enable_private_endpoint   = false
+  private_subnet_id         = module.virtual_network.subnet_lookup["mgmt"]
+  blob_private_dns_zone_id  = module.private_dns.zone_ids["privatelink.blob.core.windows.net"]
+  queue_private_dns_zone_id = module.private_dns.zone_ids["privatelink.queue.core.windows.net"]
+
   # Lifecycle Enabled
   /* lifecycle_rules = [] - lifecycle NOT needed → empty or omitted */
   lifecycle_rules = [
@@ -361,6 +371,7 @@ module "diag_storage_account" {
     module.virtual_network
   ]
 }
+
 
 # Network Security - Azure Bastion
 module "bastion" {
@@ -596,6 +607,10 @@ module "loadbalancer" {
 
 
   private_dns_zone_name = "internal.hbcdev.co.in"
+
+  depends_on = [
+    module.private_dns
+  ]
 }
 
 # NAT Gateway Module
@@ -617,7 +632,7 @@ module "nat_app" {
 }
 
 
-module "static_web_app_r1" {
+module "static_web_app" {
 
   source = "../../../modules/az-static-web-app"
 
@@ -641,3 +656,108 @@ module "static_web_app_r1" {
     module.key_vault
   ]
 }
+
+module "eda_storage_account" {
+  source = "../../../modules/az-storage"
+
+  storage_account_name = var.eda_storage_account_name
+
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+  tags                = module.rg.tags
+
+  account_kind          = "StorageV2"
+  account_tier          = "Standard"
+  replication_type      = "LRS"
+  dns_endpoint_type     = "Standard"
+  public_network_access = true
+
+  blob_versioning_enabled         = false
+  blob_delete_retention_days      = 1
+  container_delete_retention_days = 1
+
+  allowed_subnet_ids = [
+    module.virtual_network.subnet_lookup["vmss"],
+    module.virtual_network.subnet_lookup["functions"]
+  ]
+
+  allowed_ip_rules = var.allowed_ips_plain
+
+  enable_private_endpoint   = true
+  private_subnet_id         = module.virtual_network.subnet_lookup["mgmt"]
+  blob_private_dns_zone_id  = module.private_dns.zone_ids["privatelink.blob.core.windows.net"]
+  queue_private_dns_zone_id = module.private_dns.zone_ids["privatelink.queue.core.windows.net"]
+
+  containers = []
+
+  enable_queue = true
+
+  queues = [
+    "orders-queue"
+  ]
+
+  # Queue logging values directly here
+  queue_logging_read    = true
+  queue_logging_write   = true
+  queue_logging_delete  = true
+  queue_logging_version = "1.0"
+
+  depends_on = [
+    module.virtual_network
+  ]
+}
+
+module "appservice_plan_windows" {
+  source = "../../../modules/az-appserviceplan"
+
+
+  env      = local.env
+  workload = local.workload
+
+  name                = "${local.env}-${local.workload}-win-srvplan"
+  resource_group_name = module.rg.resource_group_name
+  location            = module.rg.resource_group_location
+  tags                = module.rg.tags
+
+  os_type  = "Windows" /* Windows or Linux */
+  sku_name = "P0v3"
+
+  zone_balancing_enabled = false
+}
+
+module "function_app" {
+  source = "../../../modules/az-function-app"
+
+  function_app_name = "${local.env}-${local.workload}-func-app"
+
+  resource_group_name = module.rg.resource_group_name
+  location            = module.rg.resource_group_location
+
+  service_plan_id = module.appservice_plan_windows.app_service_plan_id
+
+  storage_account_name = module.eda_storage_account.storage_account_name
+  storage_account_id   = module.eda_storage_account.storage_account_id
+
+  allowed_ip_rules = var.allowed_ips
+
+  subnet_id = module.virtual_network.subnet_lookup["functions"]
+
+  vmss_api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+
+  key_vault_id    = module.key_vault.key_vault_id
+  sql_secret_name = "mssql-credentials"
+
+  sql_server_name = "uat-eda-sql01.internal.hbcdev.co.in"
+  sql_database    = "uat-eda-sql01"
+  sql_port        = 1433
+
+  tags = module.rg.tags
+
+  depends_on = [
+    module.key_vault,
+    module.private_dns
+  ]
+}
+
+
+

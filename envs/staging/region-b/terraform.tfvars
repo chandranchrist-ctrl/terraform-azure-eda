@@ -1,16 +1,15 @@
 subscription_id = "e5e41cc7-7577-47be-a02d-3294887037d2"
 
-diag_storage_account_name          = "dredadiagsa08"
-appservice_storage_account_name    = "dredaappservsa08"
-mssql_storage_account_name         = "dredamssqlsa08"
-custom_script_storage_account_name = "dredacustomscriptsa08"
+diag_storage_account_name  = "dredadiagsa10"
+mssql_storage_account_name = "dredamssqlsa10"
+eda_storage_account_name   = "dredasa14"
 
-key_vault_name = "dreda-kv08"
+key_vault_name = "dreda-kv10"
 
 allowed_ips = [
-  "49.37.213.183/32"
+  "49.37.215.45/32"
 ]
 
 allowed_ips_plain = [
-  "49.37.213.183"
+  "49.37.215.45"
 ]

@@ -280,10 +280,15 @@ module "key_vault" {
       admin-password = "Qwerty123!",
     })
 
+    mssql-credentials = jsonencode({
+      username = "sqladmin"
+      password = "SQLP@ssw0rd!23!"
+    })
+
     /* Stores GoDaddy API credentials (API Key and Secret) as a JSON-encoded string, typically used for programmatic DNS management or domain automation */
     godaddy-apikey = jsonencode({
-      Key    = "hkHptCfQoPVe_S64u3fVz88NYAZwGPuE9ir"
-      Secret = "QLsAdAfb4pLq4VsVMQ2gFT"
+      Key    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
+      Secret = "ECkifJCPVySofRBCAqjG2Y"
     })
   }
 
@@ -293,6 +298,11 @@ module "key_vault" {
     {
       name     = "wildcard-cert"
       pfx_path = "./../certs/certificate.pfx"
+      password = "Y12345Z"
+    },
+    {
+      name     = "internal-wildcard-cert"
+      pfx_path = "./../certs/internal_certificate.pfx"
       password = "Y12345Z"
     }
   ]
@@ -342,6 +352,11 @@ module "diag_storage_account" {
 
   allowed_ip_rules = var.allowed_ips_plain # ["49.37.211.93"] /* allows access from specific public IPs */
 
+  enable_private_endpoint   = false
+  private_subnet_id         = module.virtual_network.subnet_lookup["mgmt"]
+  blob_private_dns_zone_id  = module.private_dns.zone_ids["privatelink.blob.core.windows.net"]
+  queue_private_dns_zone_id = module.private_dns.zone_ids["privatelink.queue.core.windows.net"]
+
   # Lifecycle Enabled
   /* lifecycle_rules = [] - lifecycle NOT needed → empty or omitted */
   lifecycle_rules = [
@@ -357,11 +372,12 @@ module "diag_storage_account" {
   ]
 }
 
+
 # Network Security - Azure Bastion
 module "bastion" {
   source = "../../../modules/az-bastion"
 
-  enable_bastion = false
+  enable_bastion = true
 
   env = local.env
 
@@ -472,7 +488,7 @@ module "sql_win_vm" {
   ]
 }
 
-# # Windows VMSS Deployment Module
+# Windows VMSS Deployment Module
 module "vmss" {
   source = "../../../modules/az-compute/vmss"
 
@@ -487,7 +503,7 @@ module "vmss" {
   vm_size = "Standard_D2s_v5"
 
   vmss_name = "${local.env}-wvmss"
-  vm_count  = 1
+  instances = 1
 
   image_publisher = "MicrosoftWindowsServer"
   image_offer     = "WindowsServer"
@@ -499,7 +515,7 @@ module "vmss" {
 
   subnet_id = module.virtual_network.subnet_lookup["vmss"]
 
-  enable_public_ip = true
+  enable_public_ip = false
 
   enable_lb = true
 
@@ -516,7 +532,12 @@ module "vmss" {
   key_vault_id                       = module.key_vault.key_vault_id
   localadmin_credentials_secret_name = "localadmin-credentials"
 
-  certificate_secret_url = module.key_vault.certificate_secret_ids["wildcard-cert"]
+  certificate_secret_url = module.key_vault.certificate_secret_ids["internal-wildcard-cert"]
+
+  enable_dns_record     = true
+  private_dns_zone_name = "internal.hbcdev.co.in"
+  api_dns_name          = "uat-eda-api"
+  lb_private_ip         = module.loadbalancer.private_ip
 
   enable_boot_diagnostics               = false
   boot_diagnostics_mode                 = "none"
@@ -542,8 +563,7 @@ module "vmss" {
 
   enable_backup = false
 
-  enable_autoscale = false
-
+  enable_autoscale           = false
   autoscale_min_capacity     = 1
   autoscale_max_capacity     = 3
   autoscale_default_capacity = 1
@@ -569,7 +589,7 @@ module "loadbalancer" {
   env      = local.env
   workload = local.workload
 
-  lb_name = "${local.env}-${local.workload}-lb-pr" # change to "${local.env}-lb-priv" for private LB
+  lb_name = "${local.env}-${local.workload}-lb" # change to "${local.env}-lb-priv" for private LB
 
   resource_group_name = module.rg.resource_group_name
   location            = module.rg.resource_group_location
@@ -581,7 +601,160 @@ module "loadbalancer" {
 
   # LB Configuration
   sku_name         = "Standard" # Standard or Basic
-  frontend_ip_type = "Public"   # Public or Private;  For Private LB: use a valid subnet output (e.g., spoke/web); update the key if your subnet naming differs.
+  frontend_ip_type = "Private"  # Public or Private;  For Private LB: use a valid subnet output (e.g., spoke/web); update the key if your subnet naming differs.
   # subnet_id        = null                 # Empty means Public LB
   subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
+
+
+  private_dns_zone_name = "internal.hbcdev.co.in"
+
+  depends_on = [
+    module.private_dns
+  ]
+}
+
+# NAT Gateway Module
+module "nat_app" {
+  source = "../../../modules/az-nat-gateway"
+
+  name                = "${local.env}-${local.workload}-natgw-app"
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+  tags                = module.rg.tags
+
+  enable_nat_gateway      = true
+  enable_public_ip        = true
+  enable_public_ip_prefix = false
+
+  subnet_ids = {
+    vmss = module.virtual_network.subnet_lookup["vmss"]
+  }
+}
+
+
+module "static_web_app" {
+
+  source = "../../../modules/az-static-web-app"
+
+  name                = "${local.env}-${local.workload}-swa-r2"
+  location            = "westeurope"
+  resource_group_name = module.rg.resource_group_name
+
+  tags = module.rg.tags
+
+  api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+
+  custom_domain = "uat-eda-r2.hbcdev.co.in"
+
+  domain        = "hbcdev.co.in"
+  hostname_only = "uat-eda-r2"
+
+  key_vault_id        = module.key_vault.key_vault_id
+  godaddy_secret_name = "godaddy-apikey"
+
+  depends_on = [
+    module.key_vault
+  ]
+}
+
+module "eda_storage_account" {
+  source = "../../../modules/az-storage"
+
+  storage_account_name = var.eda_storage_account_name
+
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+  tags                = module.rg.tags
+
+  account_kind          = "StorageV2"
+  account_tier          = "Standard"
+  replication_type      = "LRS"
+  dns_endpoint_type     = "Standard"
+  public_network_access = true
+
+  blob_versioning_enabled         = false
+  blob_delete_retention_days      = 1
+  container_delete_retention_days = 1
+
+  allowed_subnet_ids = [
+    module.virtual_network.subnet_lookup["vmss"],
+    module.virtual_network.subnet_lookup["functions"]
+  ]
+
+  allowed_ip_rules = var.allowed_ips_plain
+
+  enable_private_endpoint   = true
+  private_subnet_id         = module.virtual_network.subnet_lookup["mgmt"]
+  blob_private_dns_zone_id  = module.private_dns.zone_ids["privatelink.blob.core.windows.net"]
+  queue_private_dns_zone_id = module.private_dns.zone_ids["privatelink.queue.core.windows.net"]
+
+  containers = []
+
+  enable_queue = true
+
+  queues = [
+    "orders-queue"
+  ]
+
+  # Queue logging values directly here
+  queue_logging_read    = true
+  queue_logging_write   = true
+  queue_logging_delete  = true
+  queue_logging_version = "1.0"
+
+  depends_on = [
+    module.virtual_network
+  ]
+}
+
+module "appservice_plan_windows" {
+  source = "../../../modules/az-appserviceplan"
+
+
+  env      = local.env
+  workload = local.workload
+
+  name                = "${local.env}-${local.workload}-win-srvplan"
+  resource_group_name = module.rg.resource_group_name
+  location            = module.rg.resource_group_location
+  tags                = module.rg.tags
+
+  os_type  = "Windows" /* Windows or Linux */
+  sku_name = "P0v3"
+
+  zone_balancing_enabled = false
+}
+
+module "function_app" {
+  source = "../../../modules/az-function-app"
+
+  function_app_name = "${local.env}-${local.workload}-func-app"
+
+  resource_group_name = module.rg.resource_group_name
+  location            = module.rg.resource_group_location
+
+  service_plan_id = module.appservice_plan_windows.app_service_plan_id
+
+  storage_account_name = module.eda_storage_account.storage_account_name
+  storage_account_id   = module.eda_storage_account.storage_account_id
+
+  allowed_ip_rules = var.allowed_ips
+
+  subnet_id = module.virtual_network.subnet_lookup["functions"]
+
+  vmss_api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+
+  key_vault_id    = module.key_vault.key_vault_id
+  sql_secret_name = "mssql-credentials"
+
+  sql_server_name = "uat-eda-sql01.internal.hbcdev.co.in"
+  sql_database    = "uat-eda-sql01"
+  sql_port        = 1433
+
+  tags = module.rg.tags
+
+  depends_on = [
+    module.key_vault,
+    module.private_dns
+  ]
 }

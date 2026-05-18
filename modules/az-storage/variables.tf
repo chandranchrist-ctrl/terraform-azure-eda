@@ -82,3 +82,53 @@ variable "scripts" {
   }))
   default = {}
 }
+
+# Storage Queues
+variable "queues" {
+  type    = list(string)
+  default = []
+}
+
+# Queue Service Properties
+variable "queue_logging_read" {
+  type    = bool
+  default = true
+}
+
+variable "queue_logging_write" {
+  type    = bool
+  default = true
+}
+
+variable "queue_logging_delete" {
+  type    = bool
+  default = true
+}
+
+variable "queue_logging_version" {
+  type    = string
+  default = "1.0"
+}
+
+variable "enable_queue" {
+  type    = bool
+  default = true
+}
+
+variable "blob_private_dns_zone_id" {
+  type = string
+}
+
+variable "queue_private_dns_zone_id" {
+  type = string
+}
+
+variable "enable_private_endpoint" {
+  type    = bool
+  default = false
+}
+
+variable "private_subnet_id" {
+  type = string
+}
+
