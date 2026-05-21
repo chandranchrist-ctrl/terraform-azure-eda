@@ -15,6 +15,8 @@ resource "azurerm_windows_function_app" "function_app" {
   }
 
   site_config {
+    always_on = true
+
     application_stack {
       dotnet_version              = "v10.0"
       use_dotnet_isolated_runtime = true
@@ -49,6 +51,8 @@ resource "azurerm_windows_function_app" "function_app" {
     AzureWebJobsStorage__blobServiceUri = "https://${var.storage_account_name}.blob.core.windows.net"
 
     AzureWebJobsStorage__queueServiceUri = "https://${var.storage_account_name}.queue.core.windows.net"
+
+    LOGIC_APP_CALLBACK_URL = var.logic_app_callback_url
 
     AzureWebJobsStorage__credential = "managedidentity"
     QUEUE_NAME                      = "orders-queue"

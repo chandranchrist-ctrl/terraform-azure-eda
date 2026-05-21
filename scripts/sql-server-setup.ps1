@@ -3,53 +3,65 @@
 # Mixed Mode + Login + Restart
 # =========================
 
-Write-Host "Starting SQL Server configuration..." -ForegroundColor Green
+Write-Host "Starting SQL Mixed Mode configuration..." -ForegroundColor Green
 
-
-# =========================
-# 1. FIREWALL RULE (1433)
-# =========================
-Write-Host "Creating firewall rule..." -ForegroundColor Yellow
-
-New-NetFirewallRule `
-    -DisplayName "SQL Server TCP 1433" `
-    -Direction Inbound `
-    -Protocol TCP `
-    -LocalPort 1433 `
-    -Action Allow `
-    -Profile Any `
-    -Enabled True
-
-Write-Host "Firewall rule created." -ForegroundColor Green
-
-
-# =========================
-# 2. USER INPUT
-# =========================
+# SQL details
 $sqlLogin = "sqladmin"
 $sqlPassword = "SQLP@ssword!23!"
 
-
 # =========================
-# 3. ENABLE MIXED MODE
+# FIND SQL INSTANCE
 # =========================
-Write-Host "Enabling Mixed Mode authentication..." -ForegroundColor Yellow
 
-$regPath = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQLServer"
+$instance = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL"
 
-try {
-    Set-ItemProperty -Path $regPath -Name "LoginMode" -Value 2
-    Write-Host "Mixed Mode enabled." -ForegroundColor Green
+$instanceName = $instance.PSObject.Properties |
+Where-Object { $_.Name -ne "PSPath" -and $_.Name -ne "PSParentPath" -and $_.Name -ne "PSChildName" -and $_.Name -ne "PSDrive" -and $_.Name -ne "PSProvider" } |
+Select-Object -First 1
+
+$instanceKey = $instanceName.Value
+$serviceName = if ($instanceName.Name -eq "MSSQLSERVER") {
+    "MSSQLSERVER"
+} else {
+    "MSSQL`$$($instanceName.Name)"
 }
-catch {
-    Write-Host "Failed to enable Mixed Mode. Run as Administrator." -ForegroundColor Red
-}
 
+Write-Host "Detected Instance: $($instanceName.Name)"
+Write-Host "Registry Key: $instanceKey"
 
 # =========================
-# 4. CREATE SQL LOGIN
+# ENABLE MIXED MODE
 # =========================
-Write-Host "Creating SQL login..." -ForegroundColor Yellow
+
+$regPath = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$instanceKey\MSSQLServer"
+
+Set-ItemProperty -Path $regPath -Name "LoginMode" -Value 2
+
+Write-Host "Mixed Mode registry updated."
+
+# =========================
+# RESTART SQL SERVICE
+# =========================
+
+Restart-Service -Name $serviceName -Force
+
+Start-Sleep -Seconds 15
+
+Write-Host "SQL Service restarted."
+
+# =========================
+# VERIFY
+# =========================
+
+sqlcmd -E -S localhost -Q "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS AuthMode"
+
+Write-Host ""
+Write-Host "0 = Mixed Mode Enabled"
+Write-Host "1 = Windows Authentication Only"
+
+# =========================
+# CREATE LOGIN
+# =========================
 
 $query = @"
 IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = '$sqlLogin')
@@ -63,26 +75,6 @@ BEGIN
 END
 "@
 
-sqlcmd -Q $query
+sqlcmd -E -S localhost -Q $query
 
-Write-Host "SQL login created." -ForegroundColor Green
-
-
-# =========================
-# 5. RESTART SQL SERVICE
-# =========================
-Write-Host "Restarting SQL Server service..." -ForegroundColor Yellow
-
-try {
-    Restart-Service MSSQLSERVER -Force -ErrorAction Stop
-    Write-Host "SQL Server restarted successfully." -ForegroundColor Green
-}
-catch {
-    Write-Host "Failed to restart SQL Server. Check service name or permissions." -ForegroundColor Red
-}
-
-
-# =========================
-# DONE
-# =========================
-Write-Host "SQL setup completed successfully." -ForegroundColor Green
+Write-Host "SQL Login created."

@@ -58,3 +58,7 @@ variable "allowed_ip_rules" {
   type    = list(string)
   default = []
 }
+
+variable "logic_app_callback_url" {
+  type = string
+}

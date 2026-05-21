@@ -45,6 +45,17 @@ module "rg" {
   }
 }
 
+# Logic App API Connection for Gmail
+module "gmail_api_connection" {
+  source = "../../../modules/az-logic-app-api-connection"
+
+  subscription_id = var.subscription_id
+
+  api_connection_name = "${local.env}-${local.workload}-gmailapi"
+
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+}
 
 # Network module for hub-spoke setup (VNet, Subnet, NSG, NSG Rules)
 module "virtual_network" {
@@ -372,7 +383,6 @@ module "diag_storage_account" {
   ]
 }
 
-
 # Network Security - Azure Bastion
 module "bastion" {
   source = "../../../modules/az-bastion"
@@ -631,7 +641,7 @@ module "nat_app" {
   }
 }
 
-
+# static web app module
 module "static_web_app" {
 
   source = "../../../modules/az-static-web-app"
@@ -644,7 +654,7 @@ module "static_web_app" {
 
   api_url = "https://uat-eda-api.internal.hbcdev.co.in"
 
-  custom_domain = "uat-eda-r1.hbcdev.co.in"
+  custom_domain = "uat-eda.hbcdev.co.in"
 
   domain        = "hbcdev.co.in"
   hostname_only = "uat-eda-r1"
@@ -657,6 +667,7 @@ module "static_web_app" {
   ]
 }
 
+# Storage Account for EDA application data and queues
 module "eda_storage_account" {
   source = "../../../modules/az-storage"
 
@@ -707,6 +718,7 @@ module "eda_storage_account" {
   ]
 }
 
+# App Service Plan for Function App
 module "appservice_plan_windows" {
   source = "../../../modules/az-appserviceplan"
 
@@ -725,10 +737,11 @@ module "appservice_plan_windows" {
   zone_balancing_enabled = false
 }
 
+# Azure Function App Module
 module "function_app" {
   source = "../../../modules/az-function-app"
 
-  function_app_name = "${local.env}-${local.workload}-func-app"
+  function_app_name = "${local.env}-${local.workload}-funcapp"
 
   resource_group_name = module.rg.resource_group_name
   location            = module.rg.resource_group_location
@@ -753,9 +766,37 @@ module "function_app" {
 
   tags = module.rg.tags
 
+  logic_app_callback_url = module.logic_app.callback_url
+
   depends_on = [
     module.key_vault,
-    module.private_dns
+    module.private_dns,
+    module.logic_app
+  ]
+}
+
+# Logic App (consumption) Module
+module "logic_app" {
+  source = "../../../modules/az-logicapp"
+
+  subscription_id = var.subscription_id
+
+  logic_app_name = "${local.env}-${local.workload}-logicapp"
+
+  location            = module.rg.resource_group_location
+  resource_group_name = module.rg.resource_group_name
+
+  gmail_api_connection_id   = module.gmail_api_connection.gmail_api_connection_id
+  gmail_api_connection_name = module.gmail_api_connection.gmail_api_connection_name
+
+  notification_emails = [
+    "chandranchrist@gmail.com"
+  ]
+
+  tags = module.rg.tags
+
+  depends_on = [
+    module.gmail_api_connection
   ]
 }
 
