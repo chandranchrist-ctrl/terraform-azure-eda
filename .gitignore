@@ -56,3 +56,5 @@ terraform.tfstate.backup
 
 # HCL (optional)
 *.hcl
+
+**/workload/

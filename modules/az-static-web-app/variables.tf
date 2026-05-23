@@ -48,3 +48,8 @@ variable "key_vault_id" {
 variable "godaddy_secret_name" {
   type = string
 }
+
+variable "tm_custom_domain" {
+  type    = string
+  default = null
+}

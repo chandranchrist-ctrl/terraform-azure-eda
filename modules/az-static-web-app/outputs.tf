@@ -14,3 +14,11 @@ output "deployment_token" {
   value     = azurerm_static_web_app.static_web_app.api_key
   sensitive = true
 }
+
+output "tm_domain_validation_completed" {
+  value = (
+    var.tm_custom_domain != null
+    ? time_sleep.wait_for_tm_ssl[0].id
+    : null
+  )
+}

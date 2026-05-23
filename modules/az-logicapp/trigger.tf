@@ -4,35 +4,21 @@ resource "azurerm_logic_app_trigger_http_request" "order_trigger" {
 
   schema = jsonencode({
     type = "object"
-
     properties = {
-      orderId = {
-        type = "string"
-      }
+      orderId = { type = "string" }
 
-      customerName = {
-        type = "string"
-      }
+      customerName    = { type = "string" }
+      customerAddress = { type = "string" }
+      email           = { type = "string" }
+      mobileNo        = { type = "string" }
 
-      email = {
-        type = "string"
-      }
+      laptopModel = { type = "string" }
+      ram         = { type = "string" }
+      cpu         = { type = "string" }
+      quantity    = { type = "integer" }
 
-      product = {
-        type = "string"
-      }
-
-      quantity = {
-        type = "integer"
-      }
-
-      status = {
-        type = "string"
-      }
-
-      createdDate = {
-        type = "string"
-      }
+      status      = { type = "string" }
+      createdDate = { type = "string" }
     }
   })
 }
@@ -61,18 +47,21 @@ resource "azurerm_logic_app_action_custom" "send_email" {
         Subject = "New Order Created"
 
         Body = <<BODY
+ORDER DETAILS
+
 Order ID: @{triggerBody()['orderId']}
 
-Customer: @{triggerBody()['customerName']}
-
+Customer Name: @{triggerBody()['customerName']}
+Address: @{triggerBody()['customerAddress']}
 Email: @{triggerBody()['email']}
+Mobile: @{triggerBody()['mobileNo']}
 
-Product: @{triggerBody()['product']}
-
+Laptop Model: @{triggerBody()['laptopModel']}
+RAM: @{triggerBody()['ram']}
+CPU: @{triggerBody()['cpu']}
 Quantity: @{triggerBody()['quantity']}
 
 Status: @{triggerBody()['status']}
-
 Created Date: @{triggerBody()['createdDate']}
 BODY
       }

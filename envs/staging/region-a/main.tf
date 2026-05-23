@@ -130,7 +130,6 @@ module "virtual_network" {
   }
 }
 
-
 # Network - VNet Peering
 module "vnet_peering" {
   source = "../../../modules/az-vnet-peering"
@@ -330,7 +329,6 @@ module "key_vault" {
     module.access
   ]
 }
-
 
 # Storage - diagnostics
 module "diag_storage_account" {
@@ -655,9 +653,10 @@ module "static_web_app" {
   api_url = "https://uat-eda-api.internal.hbcdev.co.in"
 
   custom_domain = "uat-eda.hbcdev.co.in"
-
   domain        = "hbcdev.co.in"
-  hostname_only = "uat-eda-r1"
+  hostname_only = "uat-eda"
+
+  tm_custom_domain = "eda.hbcdev.co.in"
 
   key_vault_id        = module.key_vault.key_vault_id
   godaddy_secret_name = "godaddy-apikey"
@@ -666,6 +665,7 @@ module "static_web_app" {
     module.key_vault
   ]
 }
+
 
 # Storage Account for EDA application data and queues
 module "eda_storage_account" {
@@ -800,5 +800,55 @@ module "logic_app" {
   ]
 }
 
+# Traffic Manager Module for global routing and failover between primary and DR static web apps
+module "traffic_manager" {
 
+  source = "../../../modules/az-trafficmanager"
+
+  traffic_manager_name = "${local.env}-${local.workload}-tm"
+  resource_group_name  = module.rg.resource_group_name
+
+  create_traffic_manager  = true
+  create_primary_endpoint = true
+
+  traffic_routing_method = "Priority"
+
+  dns_relative_name = "eda-ui"
+
+  ttl = 30
+
+  create_dns_record = true
+
+  domain        = "hbcdev.co.in"
+  hostname_only = "eda"
+
+  monitor_protocol = "HTTPS"
+  monitor_port     = 443
+  monitor_path     = "/"
+
+  # primary_endpoint_name = "primary-swa"
+  # primary_custom_domain = "uat-eda.hbcdev.co.in"
+
+  # Use SWA DEFAULT hostname
+  primary_endpoint_name     = "primary-swa"
+  primary_endpoint_location = "eastasia"
+  primary_swa_priority      = "1"
+  primary_swa_enabled       = true
+
+  primary_target            = module.static_web_app.default_host_name
+  primary_static_web_app_id = module.static_web_app.static_web_app_id
+
+  enable_dr = false
+
+  key_vault_id        = module.key_vault.key_vault_id
+  godaddy_secret_name = "godaddy-apikey"
+
+  tags = module.rg.tags
+
+  validation_dependency = module.static_web_app.tm_domain_validation_completed
+
+  depends_on = [
+    module.static_web_app
+  ]
+}
 

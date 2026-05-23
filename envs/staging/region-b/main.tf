@@ -544,7 +544,7 @@ module "vmss" {
 
   enable_dns_record     = true
   private_dns_zone_name = "internal.hbcdev.co.in"
-  api_dns_name          = "uat-eda-api"
+  api_dns_name          = "dr-eda-api"
   lb_private_ip         = module.loadbalancer.private_ip
 
   enable_boot_diagnostics               = false
@@ -650,12 +650,13 @@ module "static_web_app" {
 
   tags = module.rg.tags
 
-  api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+  api_url = "https://dr-eda-api.internal.hbcdev.co.in"
 
   custom_domain = "dr-eda.hbcdev.co.in"
-
   domain        = "hbcdev.co.in"
-  hostname_only = "uat-eda-r2"
+  hostname_only = "dr-eda"
+
+  tm_custom_domain = null
 
   key_vault_id        = module.key_vault.key_vault_id
   godaddy_secret_name = "godaddy-apikey"
@@ -751,13 +752,13 @@ module "function_app" {
 
   subnet_id = module.virtual_network.subnet_lookup["functions"]
 
-  vmss_api_url = "https://uat-eda-api.internal.hbcdev.co.in"
+  vmss_api_url = "https://dr-eda-api.internal.hbcdev.co.in"
 
   key_vault_id    = module.key_vault.key_vault_id
   sql_secret_name = "mssql-credentials"
 
-  sql_server_name = "uat-eda-sql01.internal.hbcdev.co.in"
-  sql_database    = "uat-eda-sql01"
+  sql_server_name = "dr-eda-sql01.internal.hbcdev.co.in"
+  sql_database    = "dr-eda-sql01"
   sql_port        = 1433
 
   tags = module.rg.tags
@@ -795,3 +796,52 @@ module "logic_app" {
     module.gmail_api_connection
   ]
 }
+
+
+# Traffic Manager DR onboarding
+module "traffic_manager" {
+
+  source = "../../../modules/az-trafficmanager"
+
+  traffic_manager_name = "uat-eda-tm"
+  resource_group_name  = "uat-rg"
+
+  create_traffic_manager  = false
+  create_primary_endpoint = false
+
+  traffic_routing_method = "Priority"
+
+  dns_relative_name = "eda-ui"
+
+  ttl = 30
+
+  create_dns_record = false
+
+  domain        = "hbcdev.co.in"
+  hostname_only = "eda"
+
+  monitor_protocol = "HTTPS"
+  monitor_port     = 443
+  monitor_path     = "/"
+
+  enable_dr = true
+
+  primary_target = "uat-eda-swa-r1.azurestaticapps.net"
+
+  dr_endpoint_name     = "dr-swa"
+  dr_endpoint_location = "westeurope"
+  dr_swa_priority      = "2"
+  dr_swa_enabled       = true
+
+  dr_target            = module.static_web_app.default_host_name
+  dr_static_web_app_id = module.static_web_app.static_web_app_id
+
+  tags = module.rg.tags
+
+  depends_on = [
+    module.static_web_app
+  ]
+}
+
+
+
