@@ -61,7 +61,7 @@ locals {
         source_port_range      = "*"
         destination_port_range = "3389"
 
-        source_address_prefixes    = concat(var.allowed_sources, ["10.0.1.0/26"])
+        source_address_prefixes    = concat(var.allowed_sources, ["10.0.1.0/26", "192.168.1.0/24"])
         destination_address_prefix = "*"
 
         source_asg = null

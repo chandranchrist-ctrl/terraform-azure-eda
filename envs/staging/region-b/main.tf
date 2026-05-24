@@ -385,7 +385,7 @@ module "diag_storage_account" {
 module "bastion" {
   source = "../../../modules/az-bastion"
 
-  enable_bastion = true
+  enable_bastion = false
 
   env = local.env
 
@@ -441,7 +441,7 @@ module "sql_win_vm" {
   os_disk_storage_type = "Standard_LRS"
   os_disk_size_gb      = 127
 
-  enable_public_ip = false /* true  → VM gets public IP (direct internet access) */
+  enable_public_ip = true /* true  → VM gets public IP (direct internet access) */
 
   enable_availability_set = false /* true  → VMs distributed across fault/update domains (HA within region) */
   availability_set_name   = "biztalk-avset"
@@ -508,7 +508,7 @@ module "vmss" {
 
   tags = module.rg.tags
 
-  vm_size = "Standard_D2s_v5"
+  vm_size = "Standard_B2s_v2"
 
   vmss_name = "${local.env}-wvmss"
   instances = 1
@@ -528,24 +528,33 @@ module "vmss" {
   enable_lb = true
 
   # Scenario 1: Existing LB
-  # lb_name              = "existing-lb"
-  # lb_backend_pool_name = "backend-pool-name"
+  # load_balancers = [
+  #   {
+  #     lb_name              = "existing-public-lb"
+  #     lb_backend_pool_name = "lb-backend-pool"
+  #   }
+  # ]
 
   # Scenario 2: New LB scenario (created in same Terraform)
   # lb_backend_pool_id   = null
-  lb_backend_pool_id = module.loadbalancer.backend_pool_id
-
+  lb_backend_pool_ids = [
+    module.loadbalancer-public.backend_pool_id,
+    module.loadbalancer-private.backend_pool_id
+  ]
   enable_asg = false
 
   key_vault_id                       = module.key_vault.key_vault_id
   localadmin_credentials_secret_name = "localadmin-credentials"
 
-  certificate_secret_url = module.key_vault.certificate_secret_ids["internal-wildcard-cert"]
+  certificate_priv_secret_url = module.key_vault.certificate_secret_ids["internal-wildcard-cert"]
+  certificate_pub_secret_url  = module.key_vault.certificate_secret_ids["wildcard-cert"]
 
   enable_dns_record     = true
   private_dns_zone_name = "internal.hbcdev.co.in"
   api_dns_name          = "dr-eda-api"
-  lb_private_ip         = module.loadbalancer.private_ip
+  lb_private_ip         = module.loadbalancer-private.private_ip
+
+  public_domain = "hbcdev.co.in"
 
   enable_boot_diagnostics               = false
   boot_diagnostics_mode                 = "none"
@@ -585,19 +594,19 @@ module "vmss" {
   autoscale_notification_email   = "admin@company.com"
 
   depends_on = [
-    module.loadbalancer,
+    module.loadbalancer-private,
     module.key_vault
   ]
 }
 
 # Load Balancer Module
-module "loadbalancer" {
+module "loadbalancer-private" {
   source = "../../../modules/az-loadbalancer"
 
   env      = local.env
   workload = local.workload
 
-  lb_name = "${local.env}-${local.workload}-lb" # change to "${local.env}-lb-priv" for private LB
+  lb_name = "${local.env}-${local.workload}-lb-priv" # change to "${local.env}-lb-priv" for private LB
 
   resource_group_name = module.rg.resource_group_name
   location            = module.rg.resource_group_location
@@ -613,11 +622,59 @@ module "loadbalancer" {
   # subnet_id        = null                 # Empty means Public LB
   subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
 
-
   private_dns_zone_name = "internal.hbcdev.co.in"
 
+  # GoDaddy DNS
+  enable_external_dns = false
+
+  key_vault_id        = null
+  godaddy_secret_name = null
+
+  domain        = null
+  hostname_only = null
+  custom_domain = null
+
   depends_on = [
-    module.private_dns
+    module.private_dns,
+    module.key_vault
+  ]
+}
+
+module "loadbalancer-public" {
+  source = "../../../modules/az-loadbalancer"
+
+  env      = local.env
+  workload = local.workload
+
+  lb_name = "${local.env}-${local.workload}-lb-pub" # change to "${local.env}-lb-priv" for private LB
+
+  resource_group_name = module.rg.resource_group_name
+  location            = module.rg.resource_group_location
+  tags                = module.rg.tags
+
+  # Public IP
+  allocation_method = "Static"
+  sku               = "Standard"
+
+  # LB Configuration
+  sku_name         = "Standard" # Standard or Basic
+  frontend_ip_type = "Public"   # Public or Private;  For Private LB: use a valid subnet output (e.g., spoke/web); update the key if your subnet naming differs.
+  subnet_id        = null       # Empty means Public LB
+  # subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
+
+  # GoDaddy DNS
+  enable_external_dns = true
+
+  key_vault_id        = module.key_vault.key_vault_id
+  godaddy_secret_name = "godaddy-apikey"
+
+  domain        = "hbcdev.co.in"
+  hostname_only = "dr-eda-api"
+  custom_domain = "dr-eda-api.hbcdev.co.in"
+
+  depends_on = [
+    module.private_dns,
+    module.key_vault
   ]
 }
 
@@ -650,7 +707,7 @@ module "static_web_app" {
 
   tags = module.rg.tags
 
-  api_url = "https://dr-eda-api.internal.hbcdev.co.in"
+  api_url = "https://dr-eda-api.hbcdev.co.in"
 
   custom_domain = "dr-eda.hbcdev.co.in"
   domain        = "hbcdev.co.in"
@@ -826,7 +883,7 @@ module "traffic_manager" {
 
   enable_dr = true
 
-  primary_target = "uat-eda-swa-r1.azurestaticapps.net"
+  # primary_target = "uat-eda-swa-r1.azurestaticapps.net"
 
   dr_endpoint_name     = "dr-swa"
   dr_endpoint_location = "westeurope"

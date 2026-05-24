@@ -63,5 +63,38 @@ variable "backend_address_pool_name" {
 }
 
 variable "private_dns_zone_name" {
-  type = string
+  type    = string
+  default = null
 }
+
+# External DNS / GoDaddy
+variable "enable_external_dns" {
+  type    = bool
+  default = false
+}
+
+variable "key_vault_id" {
+  type    = string
+  default = null
+}
+
+variable "godaddy_secret_name" {
+  type    = string
+  default = null
+}
+
+variable "domain" {
+  type    = string
+  default = null
+}
+
+variable "hostname_only" {
+  type    = string
+  default = null
+}
+
+variable "custom_domain" {
+  type    = string
+  default = null
+}
+

@@ -78,20 +78,32 @@ variable "enable_lb" {
   default = false
 }
 
-variable "lb_backend_pool_id" {
-  type    = string
-  default = null
+variable "lb_backend_pool_ids" {
+  type    = list(string)
+  default = []
 }
 
-variable "lb_name" {
-  type    = string
-  default = null
+variable "load_balancers" {
+
+  type = list(object({
+
+    lb_name              = string
+    lb_backend_pool_name = string
+
+  }))
+
+  default = []
 }
 
-variable "lb_backend_pool_name" {
-  type    = string
-  default = null
-}
+# variable "lb_name" {
+#   type    = string
+#   default = null
+# }
+
+# variable "lb_backend_pool_name" {
+#   type    = string
+#   default = null
+# }
 
 variable "enable_asg" {
   type    = bool
@@ -194,7 +206,12 @@ variable "autoscale_notification_email" {
   default = null
 }
 
-variable "certificate_secret_url" {
+variable "certificate_priv_secret_url" {
+  type        = string
+  description = "Key Vault certificate secret URL"
+}
+
+variable "certificate_pub_secret_url" {
   type        = string
   description = "Key Vault certificate secret URL"
 }
@@ -214,4 +231,9 @@ variable "lb_private_ip" {
 
 variable "api_dns_name" {
   type = string
+}
+
+variable "public_domain" {
+  type    = string
+  default = null
 }

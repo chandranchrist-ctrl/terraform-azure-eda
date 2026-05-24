@@ -65,15 +65,30 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     version   = var.image_version
   }
 
+  # secret {
+
+  #   key_vault_id = var.key_vault_id
+
+  #   certificate {
+
+  #     store = "My"
+
+  #     url = var.certificate_secret_url
+  #   }
+  # }
+
   secret {
 
     key_vault_id = var.key_vault_id
 
     certificate {
-
       store = "My"
+      url   = var.certificate_priv_secret_url
+    }
 
-      url = var.certificate_secret_url
+    certificate {
+      store = "My"
+      url   = var.certificate_pub_secret_url
     }
   }
 
@@ -85,9 +100,11 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
       name      = "internal"
       subnet_id = var.subnet_id
 
-      load_balancer_backend_address_pool_ids = var.enable_lb ? [
-        local.lb_backend_pool_id
-      ] : []
+      # load_balancer_backend_address_pool_ids = var.enable_lb ? [
+      #   local.lb_backend_pool_id
+      # ] : []
+
+      load_balancer_backend_address_pool_ids = var.enable_lb ? local.lb_backend_pool_ids : []
 
       application_security_group_ids = var.enable_asg && length(azurerm_application_security_group.asg) > 0 ? [
         azurerm_application_security_group.asg[0].id
