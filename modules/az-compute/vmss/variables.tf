@@ -237,3 +237,8 @@ variable "public_domain" {
   type    = string
   default = null
 }
+
+variable "queue_storage_account_name" {
+  type    = string
+  default = null
+}

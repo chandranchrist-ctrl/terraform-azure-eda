@@ -16,8 +16,8 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
         {
             // allow all your frontend variants safely
-            return origin.Contains("hbcdev.co.in")
-                   || origin.EndsWith(".azurestaticapps.net");
+            return origin.EndsWith("azurestaticapps.net")
+                   || origin.EndsWith("hbcdev.co.in");
         })
         .AllowAnyHeader()
         .AllowAnyMethod();

@@ -53,6 +53,11 @@ locals {
   ))
 }
 
+data "azurerm_storage_account" "queue" {
+  name                = var.queue_storage_account_name
+  resource_group_name = var.resource_group_name
+}
+
 # data "azurerm_lb" "existing" {
 #   count = var.enable_lb && var.lb_backend_pool_id == null && var.lb_name != null ? 1 : 0
 

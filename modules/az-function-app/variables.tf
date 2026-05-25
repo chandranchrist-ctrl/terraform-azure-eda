@@ -26,28 +26,12 @@ variable "subnet_id" {
   type = string
 }
 
-variable "vmss_api_url" {
-  type = string
-}
-
 variable "tags" {
   type = map(string)
 }
 
 variable "key_vault_id" {
   type = string
-}
-
-variable "sql_server_name" {
-  type = string
-}
-
-variable "sql_database" {
-  type = string
-}
-
-variable "sql_port" {
-  type = number
 }
 
 variable "sql_secret_name" {
@@ -59,6 +43,18 @@ variable "allowed_ip_rules" {
   default = []
 }
 
+variable "storage_connection_string" {
+  type = string
+}
+
+variable "sql_connection_string" {
+  type = string
+}
+
 variable "logic_app_callback_url" {
+  type = string
+}
+
+variable "queue_name" {
   type = string
 }

@@ -46,20 +46,13 @@ resource "azurerm_windows_function_app" "function_app" {
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
 
-    AzureWebJobsStorage__accountName = var.storage_account_name
+    AzureWebJobsStorage = var.storage_connection_string
 
-    AzureWebJobsStorage__blobServiceUri = "https://${var.storage_account_name}.blob.core.windows.net"
-
-    AzureWebJobsStorage__queueServiceUri = "https://${var.storage_account_name}.queue.core.windows.net"
+    QUEUE_NAME = var.queue_name
 
     LOGIC_APP_CALLBACK_URL = var.logic_app_callback_url
 
-    AzureWebJobsStorage__credential = "managedidentity"
-    QUEUE_NAME                      = "orders-queue"
-
-    VMSS_API_URL = var.vmss_api_url
-
-    SQL_CONNECTION_STRING = "Server=tcp:${var.sql_server_name},${var.sql_port};Database=${var.sql_database};User Id=${jsondecode(data.azurerm_key_vault_secret.sql_credentials.value).username};Password=${jsondecode(data.azurerm_key_vault_secret.sql_credentials.value).password};Encrypt=True;TrustServerCertificate=True;"
+    SQL_CONNECTION_STRING = var.sql_connection_string
 
     WEBSITE_RUN_FROM_PACKAGE = "1"
   }

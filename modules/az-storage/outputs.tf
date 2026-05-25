@@ -45,3 +45,8 @@ output "queue_urls" {
     q => "https://${azurerm_storage_account.storage_account.name}.queue.core.windows.net/${q}"
   }
 }
+
+output "primary_connection_string" {
+  value     = azurerm_storage_account.storage_account.primary_connection_string
+  sensitive = true
+}

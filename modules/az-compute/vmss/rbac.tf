@@ -16,3 +16,9 @@ resource "azurerm_role_assignment" "vmss_kv_secret_user" {
 
   principal_id = azurerm_windows_virtual_machine_scale_set.vmss.identity[0].principal_id
 }
+
+resource "azurerm_role_assignment" "vmss_queue_access" {
+  scope                = data.azurerm_storage_account.queue.id
+  role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = azurerm_windows_virtual_machine_scale_set.vmss.identity[0].principal_id
+}

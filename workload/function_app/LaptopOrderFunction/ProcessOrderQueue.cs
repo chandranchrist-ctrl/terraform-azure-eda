@@ -1,105 +1,171 @@
-using System.Text.Json;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+using System;
+using Microsoft.Data.SqlClient;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
-namespace LaptopOrderFunction;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 
-public class ProcessOrderQueue
+namespace LaptopOrderFunction
 {
-    private readonly ILogger _logger;
-    private readonly IConfiguration _config;
-    private static readonly HttpClient _httpClient = new HttpClient();
-
-    public ProcessOrderQueue(ILoggerFactory loggerFactory, IConfiguration config)
+    public class ProcessOrderQueue
     {
-        _logger = loggerFactory.CreateLogger<ProcessOrderQueue>();
-        _config = config;
+        private readonly ILogger _logger;
+
+        public ProcessOrderQueue(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory.CreateLogger<ProcessOrderQueue>();
+        }
+
+        [Function("ProcessOrderQueue")]
+        public async Task Run(
+            [QueueTrigger("orders-queue")] string queueMessage)
+        {
+            _logger.LogInformation("===== QUEUE TRIGGER STARTED =====");
+
+            try
+            {
+                _logger.LogInformation($"RAW MESSAGE: {queueMessage}");
+
+                // Deserialize queue message
+                var order = JsonSerializer.Deserialize<OrderMessage>(
+                    queueMessage,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                if (order == null)
+                {
+                    _logger.LogError("Order object is NULL");
+                    return;
+                }
+
+                _logger.LogInformation("JSON DESERIALIZATION SUCCESS");
+
+                // Environment variables
+                string? sqlConnectionString =
+                    Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING");
+
+                string? logicAppUrl =
+                    Environment.GetEnvironmentVariable("LOGIC_APP_CALLBACK_URL");
+
+                if (string.IsNullOrEmpty(sqlConnectionString))
+                {
+                    _logger.LogError("SQL_CONNECTION_STRING is missing");
+                    return;
+                }
+
+                // Save to SQL DB
+                using (SqlConnection connection = new SqlConnection(sqlConnectionString))
+                {
+                    await connection.OpenAsync();
+
+                    _logger.LogInformation("SQL CONNECTION SUCCESS");
+
+                    string query = @"
+                        INSERT INTO Orders
+                        (
+                            CustomerName,
+                            CustomerAddress,
+                            Email,
+                            MobileNo,
+                            LaptopModel,
+                            RAM,
+                            CPU,
+                            Quantity
+                        )
+                        VALUES
+                        (
+                            @CustomerName,
+                            @CustomerAddress,
+                            @Email,
+                            @MobileNo,
+                            @LaptopModel,
+                            @RAM,
+                            @CPU,
+                            @Quantity
+                        )";
+
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@CustomerName", order.CustomerName);
+                        command.Parameters.AddWithValue("@CustomerAddress", order.CustomerAddress);
+                        command.Parameters.AddWithValue("@Email", order.Email);
+                        command.Parameters.AddWithValue("@MobileNo", order.MobileNo);
+                        command.Parameters.AddWithValue("@LaptopModel", order.LaptopModel);
+                        command.Parameters.AddWithValue("@RAM", order.RAM);
+                        command.Parameters.AddWithValue("@CPU", order.CPU);
+                        command.Parameters.AddWithValue("@Quantity", order.Quantity);
+
+                        int rows = await command.ExecuteNonQueryAsync();
+
+                        _logger.LogInformation($"SQL INSERT SUCCESS. Rows inserted: {rows}");
+
+                        // Logic App Payload
+                        var logicPayload = new
+                        {
+                            orderId = Guid.NewGuid().ToString(),
+                            customerName = order.CustomerName,
+                            customerAddress = order.CustomerAddress,
+                            email = order.Email,
+                            mobileNo = order.MobileNo,
+                            laptopModel = order.LaptopModel,
+                            ram = order.RAM,
+                            cpu = order.CPU,
+                            quantity = order.Quantity,
+                            status = "SUCCESS",
+                            createdDate = DateTime.UtcNow
+                        };
+
+                        // Send to Logic App
+                        if (!string.IsNullOrEmpty(logicAppUrl))
+                        {
+                            using (HttpClient client = new HttpClient())
+                            {
+                                var jsonContent = new StringContent(
+                                    JsonSerializer.Serialize(logicPayload),
+                                    Encoding.UTF8,
+                                    "application/json");
+
+                                HttpResponseMessage response =
+                                    await client.PostAsync(logicAppUrl, jsonContent);
+
+                                _logger.LogInformation(
+                                    $"Logic App Status: {response.StatusCode}");
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogInformation("===== FUNCTION COMPLETED SUCCESSFULLY =====");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"FUNCTION ERROR: {ex}");
+                throw;
+            }
+        }
     }
 
-    [Function("ProcessOrderQueue")]
-    public async Task Run(
-        [QueueTrigger("orders-queue", Connection = "AzureWebJobsStorage")] string queueMessage)
+    public class OrderMessage
     {
-        _logger.LogInformation($"Queue Trigger Fired: {queueMessage}");
+        public string? CustomerName { get; set; }
 
-        var order = JsonSerializer.Deserialize<Order>(queueMessage)
-            ?? throw new InvalidOperationException("Invalid order payload");
+        public string? CustomerAddress { get; set; }
 
-        string connStr =
-            _config["ConnectionStrings:SqlConnection"]
-            ?? _config["SqlConnection"]
-            ?? throw new InvalidOperationException("SQL connection string missing");
+        public string? Email { get; set; }
 
-        using var conn = new Microsoft.Data.SqlClient.SqlConnection(connStr);
-        await conn.OpenAsync();
+        public string? MobileNo { get; set; }
 
-        var query = @"
-            INSERT INTO Orders
-            (CustomerName, CustomerAddress, Email, MobileNo, LaptopModel, RAM, CPU, Quantity)
-            VALUES
-            (@CustomerName, @CustomerAddress, @Email, @MobileNo, @LaptopModel, @RAM, @CPU, @Quantity)";
+        public string? LaptopModel { get; set; }
 
-        using var cmd = new Microsoft.Data.SqlClient.SqlCommand(query, conn);
+        public string? RAM { get; set; }
 
-        cmd.Parameters.AddWithValue("@CustomerName", order.CustomerName);
-        cmd.Parameters.AddWithValue("@CustomerAddress", order.CustomerAddress);
-        cmd.Parameters.AddWithValue("@Email", order.Email);
-        cmd.Parameters.AddWithValue("@MobileNo", order.MobileNo);
-        cmd.Parameters.AddWithValue("@LaptopModel", order.LaptopModel);
-        cmd.Parameters.AddWithValue("@RAM", order.RAM);
-        cmd.Parameters.AddWithValue("@CPU", order.CPU);
-        cmd.Parameters.AddWithValue("@Quantity", order.Quantity);
+        public string? CPU { get; set; }
 
-        await cmd.ExecuteNonQueryAsync();
-
-        _logger.LogInformation("Order inserted into SQL successfully");
-
-        // =========================
-        // LOGIC APP CALL
-        // =========================
-
-        string? logicAppUrl =
-            _config["LOGIC_APP_CALLBACK_URL"];
-
-        if (string.IsNullOrWhiteSpace(logicAppUrl))
-        {
-            _logger.LogWarning("Logic App URL not configured");
-            return;
-        }
-
-var payload = new
-{
-    orderId = Guid.NewGuid().ToString(),
-
-    customerName = order.CustomerName,
-    customerAddress = order.CustomerAddress,
-    email = order.Email,
-    mobileNo = order.MobileNo,
-
-    laptopModel = order.LaptopModel,
-    ram = order.RAM,
-    cpu = order.CPU,
-    quantity = order.Quantity,
-
-    status = "Inserted into SQL",
-    createdDate = DateTime.UtcNow.ToString("o")
-};
-
-        var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync(logicAppUrl, content);
-
-        if (response.IsSuccessStatusCode)
-        {
-            _logger.LogInformation("Logic App triggered successfully");
-        }
-        else
-        {
-            _logger.LogError($"Logic App failed: {response.StatusCode}");
-        }
+        public int Quantity { get; set; }
     }
 }
