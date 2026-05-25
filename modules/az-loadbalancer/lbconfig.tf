@@ -2,7 +2,7 @@ locals {
   # PROBES
   probes = [
     {
-      name                = "uat-eda-vmss-http-probe"
+      name                = "eda-vmss-http-probe"
       protocol            = "Tcp"
       port                = 80
       interval_in_seconds = 5
@@ -10,7 +10,7 @@ locals {
       # request_path = "/"
     },
     {
-      name                = "uat-eda-vmss-https-probe"
+      name                = "eda-vmss-https-probe"
       protocol            = "Tcp"
       port                = 443
       interval_in_seconds = 5
@@ -22,18 +22,18 @@ locals {
   # LB RULES
   lb_rules = [
     {
-      name          = "uat-eda-vmss-http-api"
+      name          = "eda-vmss-http-api"
       protocol      = "Tcp"
       frontend_port = 80
       backend_port  = 80
-      probe_name    = "uat-eda-vmss-http-probe"
+      probe_name    = "eda-vmss-http-probe"
     },
     {
-      name          = "uat-eda-vmss-https-api"
+      name          = "eda-vmss-https-api"
       protocol      = "Tcp"
       frontend_port = 443
       backend_port  = 443
-      probe_name    = "uat-eda-vmss-https-probe"
+      probe_name    = "eda-vmss-https-probe"
     }
   ]
 }

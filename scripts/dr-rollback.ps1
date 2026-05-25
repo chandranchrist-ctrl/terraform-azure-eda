@@ -22,12 +22,12 @@ $hostName = "eda"
 $trafficManagerFqdn = "eda-ui.trafficmanager.net"
 
 # Traffic Manager
-$trafficManagerProfile = "uat-eda-tm"
+$trafficManagerProfile = "prd-eda-tm"
 $primaryEndpointName  = "primary-swa"
 
 # PRIMARY
-$primaryRg  = "uat-rg"
-$primarySwa = "uat-eda-swa-r1"
+$primaryRg  = "prd-rg"
+$primarySwa = "prd-eda-swa-r1"
 
 # DR
 $drRg  = "dr-rg"
