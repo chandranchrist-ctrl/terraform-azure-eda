@@ -245,3 +245,41 @@ https://dr-eda.hbcdev.co.in/
 https://proud-ocean-0eca32d03.7.azurestaticapps.net
 ```
 ---
+
+## 4. Architecture Validation Rules
+
+### Key Rules
+1. VMSS must NOT directly access SQL
+2. Only Function App handles SQL communication
+3. Storage Queue must use Private Endpoint resolution
+4. All internal services must resolve via Private DNS zones
+5. External access allowed only via public endpoints (SWA, TM, Logic App)
+
+---
+
+## 5. Final Validation Summary
+
+| Component               | Source       | Expected Result     |
+| ----------------------- | ------------ | ------------------- |
+| SQL DNS Resolution      | Function App | Private IP          |
+| VMSS API DNS            | Function App | Private/Internal IP |
+| SQL Connectivity (1433) | Function App | SUCCESS             |
+| Storage Queue Access    | Function App | PRIVATE ACCESS      |
+| Logic App Trigger       | Function App | SUCCESS             |
+| Database Connection     | Function App | OPEN                |
+| SQL Access from VMSS    | VMSS         | ❌ FAIL (by design)  |
+| Queue Access            | VMSS         | PRIVATE RESOLUTION  |
+| Static Web App          | Internet     | SUCCESS             |
+| Traffic Manager Routing | Internet     | SUCCESS             |
+| DR Failover             | Internet     | SUCCESS             |
+
+---
+
+## 6. Conclusion
+
+### This validation confirms:
+1. Secure private network architecture
+2. Proper separation of responsibilities (VMSS vs Function App)
+3. Correct DNS resolution using Private Endpoints
+4. End-to-end event-driven architecture flow
+5. DR readiness with seamless failover capability
