@@ -86,6 +86,8 @@ AspNetCoreModuleV2
 ```powershell
 cd vmss_api\LaptopStoreApi
 
+Remove-Item -Recurse -Force .\publish\
+
 dotnet clean
 dotnet restore
 dotnet build
@@ -94,8 +96,6 @@ dotnet build
 ### 2.4 Publish API
 
 ```powershell
-Remove-Item -Recurse -Force .\publish\
-
 dotnet publish -c Release -o ./publish
 ```
 
