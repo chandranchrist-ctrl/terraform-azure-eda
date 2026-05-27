@@ -25,8 +25,8 @@ It validates:
 ### 1.1 SQL VM DNS Validation
 
 ```bash
-nslookup uat-eda-sql01.internal.hbcdev.co.in
-nslookup dr-eda-sql01.internal.hbcdev.co.in
+nslookup prd-eda-sql01.internal.example.co.in
+nslookup dr-eda-sql01.internal.example.co.in
 ```
 
 Expected Result:
@@ -36,8 +36,8 @@ Expected Result:
 ### 1.2 VMSS API DNS Validation
 
 ```bash
-nslookup uat-eda-api.internal.hbcdev.co.in
-nslookup dr-eda-api.internal.hbcdev.co.in
+nslookup prd-eda-api.internal.example.co.in
+nslookup dr-eda-api.internal.example.co.in
 ```
 
 Expected Result:
@@ -46,8 +46,8 @@ Expected Result:
 ### 1.3 SQL Network Connectivity (1433)
 
 ```bash
-tcpping uat-eda-sql01.internal.hbcdev.co.in:1433
-tcpping dr-eda-sql01.internal.hbcdev.co.in:1433
+tcpping prd-eda-sql01.internal.example.co.in:1433
+tcpping dr-eda-sql01.internal.example.co.in:1433
 ```
 
 Expected Result:
@@ -57,12 +57,12 @@ Expected Result:
 ### 1.4 Storage Queue Reachability Validation
 
 ```bash
-curl https://uatedasa19.queue.core.windows.net/orders-queue
+curl https://prdedasa19.queue.core.windows.net/orders-queue
 curl https://dredasa19.queue.core.windows.net/orders-queue
 ```
 
 ```bash
-nslookup uatedasa19.queue.core.windows.net
+nslookup prdedasa19.queue.core.windows.net
 nslookup dredasa19.queue.core.windows.net
 ```
 
@@ -102,7 +102,7 @@ Expected Result:
 
 ```bash
 $conn = New-Object System.Data.SqlClient.SqlConnection
-$conn.ConnectionString = "Server=tcp:uat-eda-sql01.internal.hbcdev.co.in,1433;Database=master;User Id=sqladmin;Password=********;Encrypt=True;TrustServerCertificate=True;"
+$conn.ConnectionString = "Server=tcp:prd-eda-sql01.internal.example.co.in,1433;Database=master;User Id=sqladmin;Password=********;Encrypt=True;TrustServerCertificate=True;"
 $conn.Open()
 $conn.State
 ```
@@ -111,7 +111,7 @@ $conn.State
 
 ```bash
 $conn = New-Object System.Data.SqlClient.SqlConnection
-$conn.ConnectionString = "Server=tcp:dr-eda-sql01.internal.hbcdev.co.in,1433;Database=master;User Id=sqladmin;Password=********;Encrypt=True;TrustServerCertificate=True;"
+$conn.ConnectionString = "Server=tcp:dr-eda-sql01.internal.example.co.in,1433;Database=master;User Id=sqladmin;Password=********;Encrypt=True;TrustServerCertificate=True;"
 $conn.Open()
 $conn.State
 ```
@@ -127,8 +127,8 @@ Expected Result:
 ### 2.1 SQL VM DNS Validation
 
 ```bash
-nslookup uat-eda-sql01.internal.hbcdev.co.in
-nslookup dr-eda-sql01.internal.hbcdev.co.in
+nslookup prd-eda-sql01.internal.example.co.in
+nslookup dr-eda-sql01.internal.example.co.in
 ```
 
 Expected Result:
@@ -137,8 +137,8 @@ Expected Result:
 ### 2.2 SQL Network Connectivity Validation (EXPECTED TO FAIL)
 
 ```bash
-telnet uat-eda-sql01.internal.hbcdev.co.in 1433
-telnet dr-eda-sql01.internal.hbcdev.co.in 1433
+telnet prd-eda-sql01.internal.example.co.in 1433
+telnet dr-eda-sql01.internal.example.co.in 1433
 ```
 
 Expected Result:
@@ -162,12 +162,12 @@ Direct access is blocked for:
 ### 2.3 Storage Queue Reachability Validation
 
 ```bash
-curl https://uatedasa19.queue.core.windows.net/orders-queue
+curl https://prdedasa19.queue.core.windows.net/orders-queue
 curl https://dredasa19.queue.core.windows.net/orders-queue
 ```
 
 ```bash
-nslookup uatedasa19.queue.core.windows.net
+nslookup prdedasa19.queue.core.windows.net
 nslookup dredasa19.queue.core.windows.net
 ```
 
@@ -181,15 +181,15 @@ Expected Result:
 ## Validation from Internet (External Access)
 
 ### 3.1 Static Web App Access Validation
-### UAT
+### prd
 
 ```bash
-https://uat-eda.hbcdev.co.in/
+https://prd-eda.example.co.in/
 ```
 ### DR
 
 ```bash
-https://dr-eda.hbcdev.co.in/
+https://dr-eda.example.co.in/
 ```
 
 Expected Result:
@@ -201,21 +201,21 @@ Expected Result:
 ### Traffic Manager
 
 ```bash
-https://eda.hbcdev.co.in/
+https://eda.example.co.in/
 ```
 
 ### VMSS API (Production)
 
 ```bash
-https://prd-eda-api.hbcdev.co.in
-https://prd-eda-api.hbcdev.co.in/health
-https://prd-eda-api.hbcdev.co.in/swagger
+https://prd-eda-api.example.co.in
+https://prd-eda-api.example.co.in/health
+https://prd-eda-api.example.co.in/swagger
 ```
 
 ### Static Web App (Production)
 
 ```bash
-https://prd-eda.hbcdev.co.in/
+https://prd-eda.example.co.in/
 ```
 
 ### SWA Default Endpoint
@@ -228,15 +228,15 @@ https://victorious-island-065319c00.7.azurestaticapps.net
 ### VMSS API (DR)
 
 ```bash
-https://dr-eda-api.hbcdev.co.in
-https://dr-eda-api.hbcdev.co.in/health
-https://dr-eda-api.hbcdev.co.in/swagger
+https://dr-eda-api.example.co.in
+https://dr-eda-api.example.co.in/health
+https://dr-eda-api.example.co.in/swagger
 ```
 
 ### Static Web App (DR)
 
 ```bash
-https://dr-eda.hbcdev.co.in/
+https://dr-eda.example.co.in/
 ```
 
 ### SWA Default DR Endpoint
@@ -263,15 +263,15 @@ https://proud-ocean-0eca32d03.7.azurestaticapps.net
 | ----------------------- | ------------ | ------------------- |
 | SQL DNS Resolution      | Function App | Private IP          |
 | VMSS API DNS            | Function App | Private/Internal IP |
-| SQL Connectivity (1433) | Function App | SUCCESS             |
+| SQL Connectivity (1433) | Function App | Success             |
 | Storage Queue Access    | Function App | PRIVATE ACCESS      |
-| Logic App Trigger       | Function App | SUCCESS             |
-| Database Connection     | Function App | OPEN                |
-| SQL Access from VMSS    | VMSS         | ❌ FAIL (by design)  |
-| Queue Access            | VMSS         | PRIVATE RESOLUTION  |
-| Static Web App          | Internet     | SUCCESS             |
-| Traffic Manager Routing | Internet     | SUCCESS             |
-| DR Failover             | Internet     | SUCCESS             |
+| Logic App Trigger       | Function App | Success             |
+| Database Connection     | Function App | Open                |
+| SQL Access from VMSS    | VMSS         | ❌ Fail (by design) |
+| Queue Access            | VMSS         | Private Resolution  |
+| Static Web App          | Internet     | Success             |
+| Traffic Manager Routing | Internet     | Success             |
+| DR Failover             | Internet     | Success             |
 
 ---
 
