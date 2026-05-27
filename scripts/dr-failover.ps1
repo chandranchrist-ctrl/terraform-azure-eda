@@ -20,11 +20,11 @@ binds it to the DR SWA, and then restores the DNS back to Traffic Manager so tra
 $ErrorActionPreference = "Stop"
 
 # Variables
-$subscriptionId = "e5e41cc7-7577-47be-a02d-3294887037d2"
+$subscriptionId = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
 
-$customDomain = "eda.hbcdev.co.in"
+$customDomain = "eda.example.co.in"
 
-$domain = "hbcdev.co.in"
+$domain = "example.co.in"
 $hostName = "eda"
 
 $trafficManagerFqdn = "eda-ui.trafficmanager.net"
@@ -43,8 +43,8 @@ $drRg  = "dr-rg"
 $drSwa = "dr-eda-swa-r2"
 
 # GoDaddy API-Key & Secret
-$godaddyKey    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
-$godaddySecret = "ECkifJCPVySofRBCAqjG2Y"
+$godaddyKey    = "xxxxx"
+$godaddySecret = "xxxxx"
 
 # Login
 az account set --subscription $subscriptionId

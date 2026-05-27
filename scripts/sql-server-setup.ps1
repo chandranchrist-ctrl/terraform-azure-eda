@@ -7,7 +7,7 @@ Write-Host "Starting SQL Server configuration..." -ForegroundColor Green
 
 # Config
 $sqlLogin = "sqladmin"
-$sqlPassword = "SQLP@ssword!23!"
+$sqlPassword = "SQLP@ssw0rd!23!"
 $dbName = "OrdersDB"
 
 # Find SQL Instance

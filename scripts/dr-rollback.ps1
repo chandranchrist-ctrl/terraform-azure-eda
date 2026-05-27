@@ -9,11 +9,11 @@ cd D:\Mine\Course\Simplilearn\Terraform\Projects\terraform-azure-eda\scripts
 $ErrorActionPreference = "Stop"
 
 # Variables
-$subscriptionId = "e5e41cc7-7577-47be-a02d-3294887037d2"
+$subscriptionId = "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
 
-$customDomain = "eda.hbcdev.co.in"
+$customDomain = "eda.example.co.in"
 
-$domain = "hbcdev.co.in"
+$domain = "example.co.in"
 $hostName = "eda"
 
 $trafficManagerFqdn = "eda-ui.trafficmanager.net"
@@ -31,8 +31,8 @@ $drRg  = "dr-rg"
 $drSwa = "dr-eda-swa-r2"
 
 # GoDaddy APIKey & Secret
-$godaddyKey    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
-$godaddySecret = "ECkifJCPVySofRBCAqjG2Y"
+$godaddyKey    = "xxxxx"
+$godaddySecret = "xxxxx"
 
 # az login
 az account set --subscription $subscriptionId

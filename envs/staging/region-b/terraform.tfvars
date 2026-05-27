@@ -1,13 +1,13 @@
-subscription_id = "e5e41cc7-7577-47be-a02d-3294887037d2"
+subscription_id = "xxxx-xxxx-xxxx-xxxx-xxxx"
 
-diag_storage_account_name = "dredadiagsa05"
-eda_storage_account_name  = "dredasa05"
-key_vault_name            = "dr-eda-kv05"
+diag_storage_account_name = "dredadiagsa"
+eda_storage_account_name  = "dredasa"
+key_vault_name            = "dr-eda-kv"
 
 allowed_ips = [
-  "49.37.215.45/32"
+  "49.x.x.x/32"
 ]
 
 allowed_ips_plain = [
-  "49.37.215.45"
+  "49.x.x.x"
 ]

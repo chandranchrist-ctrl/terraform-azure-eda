@@ -217,7 +217,7 @@ module "private_dns" {
     "privatelink.blob.core.windows.net",
     "privatelink.queue.core.windows.net", /* Private DNS zone for Azure Storage (Queue) private endpoints */
     "privatelink.vaultcore.azure.net",
-    "internal.hbcdev.co.in"
+    "internal.example.co.in"
   ]
 
   /* VNets to link with DNS zones for name resolution */
@@ -287,8 +287,8 @@ module "key_vault" {
   /* key-value secrets stored in Key Vault */
   secrets = {
     localadmin-credentials = jsonencode({
-      admin-username = "HBAdmin",
-      admin-password = "Qwerty123!",
+      admin-username = "SAAdmin",
+      admin-password = "Qwerty1234!",
     })
 
     mssql-credentials = jsonencode({
@@ -298,8 +298,8 @@ module "key_vault" {
 
     /* Stores GoDaddy API credentials (API Key and Secret) as a JSON-encoded string, typically used for programmatic DNS management or domain automation */
     godaddy-apikey = jsonencode({
-      Key    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
-      Secret = "ECkifJCPVySofRBCAqjG2Y"
+      Key    = "xxxxx"
+      Secret = "xxxxx"
     })
   }
 
@@ -435,7 +435,7 @@ module "sql_win_vm" {
 
   subnet_id = module.virtual_network.subnet_lookup["db"]
 
-  internal_zone_name = "internal.hbcdev.co.in"
+  internal_zone_name = "internal.example.co.in"
 
   private_ip_allocation = "Dynamic"
 
@@ -555,12 +555,12 @@ module "vmss" {
 
   # Creates private DNS entry for internal API access through private load balancer
   enable_dns_record     = true
-  private_dns_zone_name = "internal.hbcdev.co.in"
+  private_dns_zone_name = "internal.example.co.in"
   api_dns_name          = "prd-eda-api"
   lb_private_ip         = module.loadbalancer-private.private_ip
 
   # Public domain used for external API/application access
-  public_domain = "hbcdev.co.in"
+  public_domain = "example.co.in"
 
   enable_boot_diagnostics               = false
   boot_diagnostics_mode                 = "none"
@@ -634,7 +634,7 @@ module "loadbalancer-private" {
   subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
 
   # Private DNS zone used for internal hostname resolution within the VNet
-  private_dns_zone_name = "internal.hbcdev.co.in"
+  private_dns_zone_name = "internal.example.co.in"
 
   # GoDaddy DNS
   enable_external_dns = false
@@ -682,9 +682,9 @@ module "loadbalancer-public" {
   godaddy_secret_name = "godaddy-apikey"
 
   # Public domain mapping configuration
-  domain        = "hbcdev.co.in"
+  domain        = "example.co.in"
   hostname_only = "prd-eda-api"
-  custom_domain = "prd-eda-api.hbcdev.co.in"
+  custom_domain = "prd-eda-api.example.co.in"
 
   depends_on = [
     module.private_dns,
@@ -726,15 +726,15 @@ module "static_web_app" {
   tags = module.rg.tags
 
   # Backend API endpoint used by frontend application
-  api_url = "https://prd-eda-api.hbcdev.co.in"
+  api_url = "https://prd-eda-api.example.co.in"
 
   # Custom domain configuration for frontend hosting
-  custom_domain = "prd-eda.hbcdev.co.in"
-  domain        = "hbcdev.co.in"
+  custom_domain = "prd-eda.example.co.in"
+  domain        = "example.co.in"
   hostname_only = "prd-eda"
 
   # Traffic manager / secondary domain mapping (if used in DR or routing scenarios)
-  tm_custom_domain = "eda.hbcdev.co.in"
+  tm_custom_domain = "eda.example.co.in"
 
   # GoDaddy DNS automation using Key Vault stored credentials
   key_vault_id        = module.key_vault.key_vault_id
@@ -844,7 +844,7 @@ module "function_app" {
   storage_connection_string = module.eda_storage_account.primary_connection_string
 
   # Connects Function App to Azure SQL Database for order processing
-  sql_connection_string = "Server=tcp:prd-eda-sql01.internal.hbcdev.co.in,1433;Database=OrdersDB;User Id=sqladmin;Password=SQLP@ssword!23!;Encrypt=True;TrustServerCertificate=True;"
+  sql_connection_string = "Server=tcp:prd-eda-sql01.internal.example.co.in,1433;Database=OrdersDB;User Id=sqladmin;Password=SQLP@ssword!23!;Encrypt=True;TrustServerCertificate=True;"
 
   # Queue used for event-driven processing pipeline
   queue_name = "orders-queue"
@@ -877,7 +877,7 @@ module "logic_app" {
 
   # Email recipients for notification workflows triggered by Logic App
   notification_emails = [
-    "chandranchrist@gmail.com"
+    "admin@gmail.com"
   ]
 
   tags = module.rg.tags
@@ -913,7 +913,7 @@ module "traffic_manager" {
   # Enables creation of DNS record for Traffic Manager endpoint
   create_dns_record = true
 
-  domain        = "hbcdev.co.in"
+  domain        = "example.co.in"
   hostname_only = "eda"
 
   # Health probe configuration for endpoint monitoring
