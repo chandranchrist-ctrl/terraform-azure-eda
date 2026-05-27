@@ -1,4 +1,4 @@
-/* Public IP (only for Public LB) */
+# Creates public IP for Load Balancer (only when Public LB is enabled)
 resource "azurerm_public_ip" "lb_public_ip" {
   count               = var.frontend_ip_type == "Public" ? 1 : 0
   name                = var.public_ip_name != "" ? var.public_ip_name : "${var.lb_name}-pip"
@@ -8,7 +8,7 @@ resource "azurerm_public_ip" "lb_public_ip" {
   sku                 = var.sku
 }
 
-# Load Balancer
+# Deploys Azure Load Balancer with either public or private frontend configuration
 resource "azurerm_lb" "lb" {
   name                = var.lb_name
   location            = var.location
@@ -24,17 +24,14 @@ resource "azurerm_lb" "lb" {
   }
 }
 
-# =========================
-# SINGLE BACKEND POOL
-# =========================
+# Defines backend pool for VMSS/VM traffic distribution
 resource "azurerm_lb_backend_address_pool" "backend_pool" {
   name            = var.backend_address_pool_name
   loadbalancer_id = azurerm_lb.lb.id
 }
 
-# =========================
-# PROBES
-# =========================
+# Health Probes
+# Creates health probes used by Load Balancer to check backend VM health
 resource "azurerm_lb_probe" "probes" {
   for_each = { for p in local.all_probes : p.name => p }
 
@@ -46,16 +43,15 @@ resource "azurerm_lb_probe" "probes" {
   number_of_probes    = each.value.number_of_probes
 }
 
-# Flatten probes (still useful)
+# Flattens probe configuration into a single list for iteration
 locals {
   all_probes = flatten([
     for p in local.probes : p
   ])
 }
 
-# =========================
-# LB RULES
-# =========================
+# Load Balancer Rules
+# Creates LB rules mapping frontend ports to backend ports with optional health probes
 resource "azurerm_lb_rule" "lb_rules" {
   for_each = { for r in local.all_lb_rules : r.name => r }
 
@@ -75,13 +71,14 @@ resource "azurerm_lb_rule" "lb_rules" {
   disable_outbound_snat = true
 }
 
-# Flatten rules
+# Flattens LB rule definitions for for_each usage
 locals {
   all_lb_rules = flatten([
     for r in local.lb_rules : r
   ])
 }
 
+# Creates private DNS A record mapping LB private IP to internal DNS name
 resource "azurerm_private_dns_a_record" "lb" {
   count = var.frontend_ip_type == "Private" ? 1 : 0
 

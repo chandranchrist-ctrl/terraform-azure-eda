@@ -1,5 +1,5 @@
 locals {
-  # PROBES
+  # Probes
   probes = [
     {
       name                = "eda-vmss-http-probe"
@@ -19,7 +19,7 @@ locals {
     }
   ]
 
-  # LB RULES
+  # LB Rules
   lb_rules = [
     {
       name          = "eda-vmss-http-api"

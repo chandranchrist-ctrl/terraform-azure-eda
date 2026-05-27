@@ -1,4 +1,3 @@
-# Core
 variable "env" {
   description = "Prefix for route table names"
   type        = string

@@ -8,10 +8,7 @@ cd D:\Mine\Course\Simplilearn\Terraform\Projects\terraform-azure-eda\scripts
 
 $ErrorActionPreference = "Stop"
 
-# =====================================================
-# VARIABLES
-# =====================================================
-
+# Variables
 $subscriptionId = "e5e41cc7-7577-47be-a02d-3294887037d2"
 
 $customDomain = "eda.hbcdev.co.in"
@@ -25,7 +22,7 @@ $trafficManagerFqdn = "eda-ui.trafficmanager.net"
 $trafficManagerProfile = "prd-eda-tm"
 $primaryEndpointName  = "primary-swa"
 
-# PRIMARY
+# Primary
 $primaryRg  = "prd-rg"
 $primarySwa = "prd-eda-swa-r1"
 
@@ -33,20 +30,14 @@ $primarySwa = "prd-eda-swa-r1"
 $drRg  = "dr-rg"
 $drSwa = "dr-eda-swa-r2"
 
-# GoDaddy
+# GoDaddy APIKey & Secret
 $godaddyKey    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
 $godaddySecret = "ECkifJCPVySofRBCAqjG2Y"
 
-# =====================================================
-# LOGIN
-# =====================================================
-
+# az login
 az account set --subscription $subscriptionId
 
-# =====================================================
-# GET PRIMARY SWA HOSTNAME
-# =====================================================
-
+# Get Primary SWA Hostname
 Write-Host "Fetching PRIMARY SWA hostname..."
 
 $primaryHostname = az staticwebapp show `
@@ -57,10 +48,7 @@ $primaryHostname = az staticwebapp show `
 
 Write-Host "PRIMARY SWA Hostname: $primaryHostname"
 
-# =====================================================
-# REMOVE DOMAIN FROM DR SWA
-# =====================================================
-
+# Remove Domain From DR SWA
 Write-Host "=========================================="
 Write-Host "REMOVING DOMAIN FROM DR SWA"
 Write-Host "=========================================="
@@ -82,10 +70,7 @@ Write-Host "Waiting for Azure SWA hostname ownership release..."
 
 Start-Sleep -Seconds 120
 
-# =====================================================
-# TEMPORARY DNS SWAP TO PRIMARY SWA
-# =====================================================
-
+# Temporary DNS Swap To Primary SWA
 $headers = @{
   Authorization = "sso-key $godaddyKey`:$godaddySecret"
   "Content-Type" = "application/json"
@@ -105,18 +90,12 @@ Invoke-RestMethod `
 
 Write-Host "Temporary DNS updated to PRIMARY SWA."
 
-# =====================================================
-# WAIT FOR PROPAGATION
-# =====================================================
-
+# Wait For Propagation
 Write-Host "Waiting 120 seconds for DNS propagation..."
 
 Start-Sleep -Seconds 120
 
-# =====================================================
-# ATTACH DOMAIN TO PRIMARY SWA
-# =====================================================
-
+# Attach Domain To Primary SWA
 Write-Host "=========================================="
 Write-Host "ATTACHING DOMAIN TO PRIMARY SWA"
 Write-Host "=========================================="
@@ -152,10 +131,7 @@ if (-not $attached) {
     throw "FAILED: Unable to attach custom domain to PRIMARY SWA after multiple attempts."
 }
 
-# =====================================================
-# RESTORE TRAFFIC MANAGER DNS
-# =====================================================
-
+# Restora Traffic Manager DNS
 Write-Host "Restoring Traffic Manager DNS..."
 
 $restoreBody = "[{`"data`":`"$trafficManagerFqdn`",`"ttl`":600}]"
@@ -168,10 +144,7 @@ Invoke-RestMethod `
 
 Write-Host "Traffic Manager DNS restored."
 
-# =====================================================
-# ENABLE PRIMARY TM ENDPOINT
-# =====================================================
-
+# Enable Primary TM Endpoint
 Write-Host "=========================================="
 Write-Host "ENABLING PRIMARY TM ENDPOINT"
 Write-Host "=========================================="
@@ -212,10 +185,7 @@ if ($status -ne "Enabled") {
 Write-Host ""
 Write-Host "PRIMARY TM endpoint enabled successfully."
 
-# =====================================================
-# COMPLETED
-# =====================================================
-
+# Completed
 Write-Host ""
 Write-Host "=========================================="
 Write-Host "PRIMARY FAILBACK COMPLETED SUCCESSFULLY"

@@ -22,8 +22,10 @@ resource "azurerm_windows_function_app" "function_app" {
       use_dotnet_isolated_runtime = true
     }
 
+    # Enables full VNet routing for secure outbound connectivity
     vnet_route_all_enabled = true
 
+    # Dynamically allows configured IP ranges for controlled access
     dynamic "ip_restriction" {
       for_each = var.allowed_ip_rules
 
@@ -35,6 +37,7 @@ resource "azurerm_windows_function_app" "function_app" {
       }
     }
 
+    # Denies all other traffic by default (secure-by-default model)
     ip_restriction {
       name       = "Deny-All"
       priority   = 500
@@ -43,15 +46,20 @@ resource "azurerm_windows_function_app" "function_app" {
     }
   }
 
+  # App settings define runtime configuration for the Function App including storage, queue trigger, SQL connection, and Logic App integration
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
 
+    # Azure Storage used for Function runtime state and triggers
     AzureWebJobsStorage = var.storage_connection_string
 
+    # Queue name used for event-driven processing
     QUEUE_NAME = var.queue_name
 
+    # Callback endpoint for Logic App orchestration
     LOGIC_APP_CALLBACK_URL = var.logic_app_callback_url
 
+    # SQL connection string for order processing and persistence
     SQL_CONNECTION_STRING = var.sql_connection_string
 
     WEBSITE_RUN_FROM_PACKAGE = "1"
@@ -60,6 +68,7 @@ resource "azurerm_windows_function_app" "function_app" {
   tags = var.tags
 }
 
+# Integrates Function App with Virtual Network for private subnet access
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet" {
   app_service_id = azurerm_windows_function_app.function_app.id
   subnet_id      = var.subnet_id

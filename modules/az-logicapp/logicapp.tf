@@ -1,3 +1,4 @@
+# Creates Logic App workflow and binds Gmail API connection for email-based workflow orchestration and notifications
 resource "azurerm_logic_app_workflow" "logic_app" {
   name                = var.logic_app_name
   location            = var.location

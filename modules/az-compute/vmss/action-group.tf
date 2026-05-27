@@ -1,3 +1,4 @@
+# Creates Azure Monitor action group for VMSS autoscale email notifications
 resource "azurerm_monitor_action_group" "vmss" {
   count = var.enable_autoscale_notifications ? 1 : 0
 

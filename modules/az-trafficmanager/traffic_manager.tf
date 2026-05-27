@@ -1,3 +1,4 @@
+# Creates or references Azure Traffic Manager profile for global routing, endpoint health monitoring, and DR failover
 resource "azurerm_traffic_manager_profile" "traffic_manager" {
 
   count = var.create_traffic_manager ? 1 : 0
@@ -8,8 +9,10 @@ resource "azurerm_traffic_manager_profile" "traffic_manager" {
 
   profile_status = "Enabled"
 
+  # Defines routing strategy (Priority, Weighted, Performance, Geographic, etc.)
   traffic_routing_method = var.traffic_routing_method
 
+  # Enables Traffic View analytics for endpoint traffic insights
   traffic_view_enabled = true
 
   dns_config {
@@ -21,6 +24,7 @@ resource "azurerm_traffic_manager_profile" "traffic_manager" {
 
   monitor_config {
 
+    # Health probe configuration used to detect endpoint availability
     protocol = var.monitor_protocol
 
     port = var.monitor_port
@@ -41,6 +45,7 @@ resource "azurerm_traffic_manager_profile" "traffic_manager" {
   ]
 }
 
+# References existing Traffic Manager profile when onboarding DR environment
 data "azurerm_traffic_manager_profile" "existing" {
 
   count = var.create_traffic_manager ? 0 : 1
@@ -52,11 +57,14 @@ data "azurerm_traffic_manager_profile" "existing" {
 
 locals {
 
+  # Selects either newly created or existing Traffic Manager profile ID
   traffic_manager_id = var.create_traffic_manager ? azurerm_traffic_manager_profile.traffic_manager[0].id : data.azurerm_traffic_manager_profile.existing[0].id
 
+  # Selects Traffic Manager FQDN for DNS integration
   traffic_manager_fqdn = var.create_traffic_manager ? azurerm_traffic_manager_profile.traffic_manager[0].fqdn : data.azurerm_traffic_manager_profile.existing[0].fqdn
 }
 
+# Registers primary Static Web App endpoint in Traffic Manager profile
 resource "azurerm_traffic_manager_external_endpoint" "primary" {
 
   count = var.create_primary_endpoint ? 1 : 0
@@ -78,6 +86,7 @@ resource "azurerm_traffic_manager_external_endpoint" "primary" {
   ]
 }
 
+# Registers DR Static Web App endpoint for failover routing in Traffic Manager
 resource "azurerm_traffic_manager_external_endpoint" "dr" {
 
   count = var.enable_dr ? 1 : 0

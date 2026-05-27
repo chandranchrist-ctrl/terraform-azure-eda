@@ -1,3 +1,4 @@
+# Creates/updates external GoDaddy DNS A record pointing domain hostname to Azure Load Balancer public IP
 # GoDaddy A Record
 resource "null_resource" "external_dns" {
 

@@ -1,3 +1,4 @@
+# Retrieves and decodes GoDaddy API credentials from Key Vault for automated DNS record management
 # Key Vault Secret Data Source
 data "azurerm_key_vault_secret" "godaddy" {
 
@@ -9,6 +10,7 @@ data "azurerm_key_vault_secret" "godaddy" {
 
 locals {
 
+  # Decodes GoDaddy API credentials stored as JSON secret
   godaddy_credentials = var.create_dns_record ? jsondecode(
     data.azurerm_key_vault_secret.godaddy[0].value
   ) : null

@@ -5,13 +5,21 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 cd D:\Mine\Course\Simplilearn\Terraform\Projects\terraform-azure-eda\scripts
 .\dr-failover.ps1
 #>
+# --------------------------------------------------------------------------------------------------------------------
 
+<# 
+DR Failover Explaination:
+
+    Azure Static Web Apps validate requests using the Host Header / custom domain binding, so simply failing over Traffic Manager is not enough.
+This script temporarily changes the Traffic Manager custom domain DNS to point directly to the DR SWA default hostname, releases the domain from the primary SWA, 
+binds it to the DR SWA, and then restores the DNS back to Traffic Manager so traffic continues through TM with the DR endpoint active. 
+#>
+# --------------------------------------------------------------------------------------------------------------------
+
+# Automates DR failover by switching Traffic Manager routing and migrating custom domain from primary SWA to DR SWA
 $ErrorActionPreference = "Stop"
 
-# =====================================================
-# VARIABLES
-# =====================================================
-
+# Variables
 $subscriptionId = "e5e41cc7-7577-47be-a02d-3294887037d2"
 
 $customDomain = "eda.hbcdev.co.in"
@@ -26,7 +34,7 @@ $trafficManagerProfile = "prd-eda-tm"
 $primaryEndpointName  = "primary-swa"
 $drEndpointName       = "dr-swa"
 
-# PRIMARY
+# Primary
 $primaryRg  = "prd-rg"
 $primarySwa = "prd-eda-swa-r1"
 
@@ -34,20 +42,14 @@ $primarySwa = "prd-eda-swa-r1"
 $drRg  = "dr-rg"
 $drSwa = "dr-eda-swa-r2"
 
-# GoDaddy
+# GoDaddy API-Key & Secret
 $godaddyKey    = "hkHptCfQoPVe_GLheXScX4sHsSsNBu2Y3qj"
 $godaddySecret = "ECkifJCPVySofRBCAqjG2Y"
 
-# =====================================================
-# LOGIN
-# =====================================================
-
+# Login
 az account set --subscription $subscriptionId
 
-# =====================================================
-# GET DR SWA HOSTNAME
-# =====================================================
-
+# Get DR SWA Hostname
 Write-Host "Fetching DR SWA hostname..."
 
 $drHostname = az staticwebapp show `
@@ -58,10 +60,7 @@ $drHostname = az staticwebapp show `
 
 Write-Host "DR SWA Hostname: $drHostname"
 
-# =====================================================
-# DISABLE PRIMARY TRAFFIC MANAGER ENDPOINT
-# =====================================================
-
+# Disable Primary Traffic Manager Endpoint
 Write-Host "=========================================="
 Write-Host "DISABLING PRIMARY TM ENDPOINT"
 Write-Host "=========================================="
@@ -92,10 +91,7 @@ if ($LASTEXITCODE -ne 0 -or $status -ne "Disabled") {
 
 Write-Host "PRIMARY TM endpoint disabled successfully."
 
-# =====================================================
-# REMOVE DOMAIN FROM PRIMARY SWA
-# =====================================================
-
+# Remove Domain From Primary SWA
 Write-Host "Removing domain from PRIMARY SWA..."
 
 az staticwebapp hostname delete `
@@ -110,10 +106,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "Primary custom domain removed."
 
-# =====================================================
-# TEMPORARY DNS SWAP TO DR SWA
-# =====================================================
-
+# Temporary DNS Swap TO DR SWA
 $headers = @{
   Authorization = "sso-key $godaddyKey`:$godaddySecret"
   "Content-Type" = "application/json"
@@ -133,10 +126,7 @@ Invoke-RestMethod `
 
 Write-Host "Temporary validation DNS updated."
 
-# =====================================================
-# WAIT FOR DOMAIN RELEASE FROM PRIMARY SWA
-# =====================================================
-
+# Wait For Domain Release From Primary SWA
 Write-Host "Waiting for domain release from PRIMARY SWA..."
 
 $released = $false
@@ -163,10 +153,7 @@ if (-not $released) {
     throw "FAILED: Domain not released from PRIMARY SWA in expected time."
 }
 
-# =====================================================
-# ADD DOMAIN TO DR SWA
-# =====================================================
-
+# Add Domain To DR SWA
 Write-Host "Attaching domain to DR SWA..."
 
 $attached = $false
@@ -194,10 +181,7 @@ if (-not $attached) {
     throw "FAILED: Domain could not be attached to DR SWA after retries."
 }
 
-# =====================================================
-# RESTORE TRAFFIC MANAGER DNS (ONLY ON SUCCESS)
-# =====================================================
-
+# Restore Traffic Manager DNS (Only ON Sucess)
 Write-Host "Restoring Traffic Manager DNS..."
 
 $restoreBody = "[{`"data`":`"$trafficManagerFqdn`",`"ttl`":600}]"
@@ -210,10 +194,7 @@ Invoke-RestMethod `
 
 Write-Host "Traffic Manager DNS restored."
 
-# =====================================================
-# COMPLETED
-# =====================================================
-
+# Completed
 Write-Host ""
 Write-Host "=========================================="
 Write-Host "DR FAILOVER COMPLETED SUCCESSFULLY"

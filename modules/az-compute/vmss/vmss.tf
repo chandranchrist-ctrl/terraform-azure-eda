@@ -1,3 +1,4 @@
+# Generates VMSS instance names and controls optional features like zones and boot diagnostics
 locals {
   vmss_instances = [
     for i in range(var.instances) :
@@ -11,6 +12,7 @@ locals {
   use_create_sa   = var.boot_diagnostics_mode == "create"
 }
 
+# Creates storage account for VM boot diagnostics when using Terraform-managed diagnostics storage
 resource "azurerm_storage_account" "diag" {
   count = local.use_create_sa ? 1 : 0
 
@@ -22,6 +24,7 @@ resource "azurerm_storage_account" "diag" {
   account_replication_type = "LRS"
 }
 
+# Creates Application Security Group for VMSS NIC-level traffic filtering
 resource "azurerm_application_security_group" "asg" {
   count = var.enable_asg ? 1 : 0
 
@@ -30,6 +33,7 @@ resource "azurerm_application_security_group" "asg" {
   resource_group_name = var.resource_group_name
 }
 
+# Deploys Windows VM Scale Set with networking, certificates, load balancing, and optional diagnostics
 resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
   name                = var.vmss_name
   location            = var.location
@@ -58,6 +62,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     disk_size_gb         = var.os_disk_size_gb
   }
 
+  # Defines Windows Server image used for VMSS instances
   source_image_reference {
     publisher = var.image_publisher
     offer     = var.image_offer
@@ -65,18 +70,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     version   = var.image_version
   }
 
-  # secret {
-
-  #   key_vault_id = var.key_vault_id
-
-  #   certificate {
-
-  #     store = "My"
-
-  #     url = var.certificate_secret_url
-  #   }
-  # }
-
+  # Injects SSL certificates from Key Vault into VMSS instances
   secret {
 
     key_vault_id = var.key_vault_id
@@ -92,6 +86,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     }
   }
 
+  # Configures VMSS network interface and backend load balancer integration
   network_interface {
     name    = "${var.vmss_name}-nic"
     primary = true
@@ -100,16 +95,14 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
       name      = "internal"
       subnet_id = var.subnet_id
 
-      # load_balancer_backend_address_pool_ids = var.enable_lb ? [
-      #   local.lb_backend_pool_id
-      # ] : []
-
+      # Attaches VMSS NICs to configured load balancer backend pools
       load_balancer_backend_address_pool_ids = var.enable_lb ? local.lb_backend_pool_ids : []
 
       application_security_group_ids = var.enable_asg && length(azurerm_application_security_group.asg) > 0 ? [
         azurerm_application_security_group.asg[0].id
       ] : []
 
+      # Optionally creates public IPs for VMSS instances
       dynamic "public_ip_address" {
         for_each = var.enable_public_ip ? [1] : []
 
@@ -120,6 +113,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     }
   }
 
+  # Configures VM boot diagnostics using existing or Terraform-created storage account
   boot_diagnostics {
     storage_account_uri = local.use_boot_diag ? (
       local.use_existing_sa
@@ -128,6 +122,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
     ) : null
   }
 
+  # Optionally attaches additional managed data disks to VMSS instances
   dynamic "data_disk" {
     for_each = var.data_disks
 
@@ -142,6 +137,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "vmss" {
   tags = var.tags
 }
 
+# Creates restore point collection for VMSS backup and recovery operations
 resource "azurerm_virtual_machine_restore_point_collection" "rpc" {
   count = var.enable_backup ? 1 : 0
 

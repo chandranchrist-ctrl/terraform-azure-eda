@@ -1,3 +1,4 @@
+# Defines HTTP trigger for Logic App to receive order events from Function App and start workflow execution
 resource "azurerm_logic_app_trigger_http_request" "order_trigger" {
   name         = "order-notification-trigger"
   logic_app_id = azurerm_logic_app_workflow.logic_app.id
@@ -23,6 +24,7 @@ resource "azurerm_logic_app_trigger_http_request" "order_trigger" {
   })
 }
 
+# Sends formatted HTML email via Gmail connector when a new order is received through Logic App workflow
 resource "azurerm_logic_app_action_custom" "send_email" {
   name         = "send-order-email"
   logic_app_id = azurerm_logic_app_workflow.logic_app.id

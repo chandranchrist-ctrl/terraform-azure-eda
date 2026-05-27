@@ -1,3 +1,4 @@
+# Creates private DNS records for VMs using their private NIC IP addresses
 resource "azurerm_private_dns_a_record" "vm" {
 
   for_each = azurerm_windows_virtual_machine.vm

@@ -45,9 +45,9 @@ module "rg" {
   }
 }
 
-# Logic App API Connection for Gmail
+# Logic App API Connection for Gmail Notification
 module "gmail_api_connection" {
-  source = "../../../modules/az-logic-app-api-connection"
+  source = "../../../modules/az-logicapp-api-connection"
 
   subscription_id = var.subscription_id
 
@@ -104,6 +104,7 @@ module "virtual_network" {
         cidr = ["172.16.2.0/24"]
         tags = { type = "infra" }
       }
+      # Function App delegated subnet for secure VNet integration with Azure App Services
       functions = {
         cidr = ["172.16.3.0/24"]
         tags = { type = "infra" }
@@ -537,10 +538,13 @@ module "vmss" {
 
   # Scenario 2: New LB scenario (created in same Terraform)
   # lb_backend_pool_id   = null
+
+  # Scenario 3: Backend pool IDs fetched dynamically from Terraform-created load balancer modules
   lb_backend_pool_ids = [
     module.loadbalancer-public.backend_pool_id,
     module.loadbalancer-private.backend_pool_id
   ]
+
   enable_asg = false
 
   key_vault_id                       = module.key_vault.key_vault_id
@@ -549,11 +553,13 @@ module "vmss" {
   certificate_priv_secret_url = module.key_vault.certificate_secret_ids["internal-wildcard-cert"]
   certificate_pub_secret_url  = module.key_vault.certificate_secret_ids["wildcard-cert"]
 
+  # Creates private DNS entry for internal API access through private load balancer
   enable_dns_record     = true
   private_dns_zone_name = "internal.hbcdev.co.in"
   api_dns_name          = "prd-eda-api"
   lb_private_ip         = module.loadbalancer-private.private_ip
 
+  # Public domain used for external API/application access
   public_domain = "hbcdev.co.in"
 
   enable_boot_diagnostics               = false
@@ -582,6 +588,7 @@ module "vmss" {
 
   enable_backup = false
 
+  # Autoscale configuration for VMSS based on CPU utilization
   enable_autoscale           = false
   autoscale_min_capacity     = 1
   autoscale_max_capacity     = 3
@@ -592,6 +599,7 @@ module "vmss" {
 
   autoscale_cooldown = "PT5M"
 
+  # Optional email notifications for autoscale events
   enable_autoscale_notifications = false
   autoscale_notification_email   = "admin@company.com"
 
@@ -625,6 +633,7 @@ module "loadbalancer-private" {
   # subnet_id        = null                 # Empty means Public LB
   subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
 
+  # Private DNS zone used for internal hostname resolution within the VNet
   private_dns_zone_name = "internal.hbcdev.co.in"
 
   # GoDaddy DNS
@@ -665,12 +674,14 @@ module "loadbalancer-public" {
   subnet_id        = null       # Empty means Public LB
   # subnet_id = module.virtual_network.subnet_lookup["AzureLoadBalancer"]
 
-  # GoDaddy DNS
+  # External DNS automation using GoDaddy API
   enable_external_dns = true
 
+  # Key Vault secret containing GoDaddy API credentials
   key_vault_id        = module.key_vault.key_vault_id
   godaddy_secret_name = "godaddy-apikey"
 
+  # Public domain mapping configuration
   domain        = "hbcdev.co.in"
   hostname_only = "prd-eda-api"
   custom_domain = "prd-eda-api.hbcdev.co.in"
@@ -681,7 +692,7 @@ module "loadbalancer-public" {
   ]
 }
 
-# NAT Gateway Module
+# Deploys NAT Gateway for outbound internet access from VMSS subnet without exposing public IPs on instances
 module "nat_app" {
   source = "../../../modules/az-nat-gateway"
 
@@ -690,16 +701,20 @@ module "nat_app" {
   resource_group_name = module.rg.resource_group_name
   tags                = module.rg.tags
 
-  enable_nat_gateway      = true
+  # Enables NAT Gateway for controlled outbound connectivity
+  enable_nat_gateway = true
+
+  # Creates public IP for NAT Gateway outbound translation
   enable_public_ip        = true
   enable_public_ip_prefix = false
 
+  # Associates NAT Gateway with VMSS subnet for outbound internet traffic
   subnet_ids = {
     vmss = module.virtual_network.subnet_lookup["vmss"]
   }
 }
 
-# static web app module
+# Deploys Azure Static Web App with API integration and custom domain + GoDaddy DNS configuration
 module "static_web_app" {
 
   source = "../../../modules/az-static-web-app"
@@ -710,14 +725,18 @@ module "static_web_app" {
 
   tags = module.rg.tags
 
+  # Backend API endpoint used by frontend application
   api_url = "https://prd-eda-api.hbcdev.co.in"
 
+  # Custom domain configuration for frontend hosting
   custom_domain = "prd-eda.hbcdev.co.in"
   domain        = "hbcdev.co.in"
   hostname_only = "prd-eda"
 
+  # Traffic manager / secondary domain mapping (if used in DR or routing scenarios)
   tm_custom_domain = "eda.hbcdev.co.in"
 
+  # GoDaddy DNS automation using Key Vault stored credentials
   key_vault_id        = module.key_vault.key_vault_id
   godaddy_secret_name = "godaddy-apikey"
 
@@ -727,7 +746,7 @@ module "static_web_app" {
 }
 
 
-# Storage Account for EDA application data and queues
+# Creates Azure Storage Account for EDA data and queue processing with private endpoint, subnet restrictions, and queue-enabled architecture
 module "eda_storage_account" {
   source = "../../../modules/az-storage"
 
@@ -747,13 +766,16 @@ module "eda_storage_account" {
   blob_delete_retention_days      = 1
   container_delete_retention_days = 1
 
+  # Restricts access to VMSS and Function subnets for controlled internal communication
   allowed_subnet_ids = [
     module.virtual_network.subnet_lookup["vmss"],
     module.virtual_network.subnet_lookup["functions"]
   ]
 
+  # Optional IP-based access control for external trusted sources
   allowed_ip_rules = var.allowed_ips_plain
 
+  # Enables private endpoint for secure internal access
   enable_private_endpoint   = true
   private_subnet_id         = module.virtual_network.subnet_lookup["mgmt"]
   blob_private_dns_zone_id  = module.private_dns.zone_ids["privatelink.blob.core.windows.net"]
@@ -761,13 +783,14 @@ module "eda_storage_account" {
 
   containers = []
 
+  # Enables Azure Queue Storage for event-driven EDA processing
   enable_queue = true
 
   queues = [
     "orders-queue"
   ]
 
-  # Queue logging values directly here
+  # Enables diagnostic logging for queue operations
   queue_logging_read    = true
   queue_logging_write   = true
   queue_logging_delete  = true
@@ -797,7 +820,7 @@ module "appservice_plan_windows" {
   zone_balancing_enabled = false
 }
 
-# Azure Function App Module
+# Deploys Azure Function App for EDA processing with queue trigger, SQL integration, Key Vault access, and VNet integration
 module "function_app" {
   source = "../../../modules/az-function-app"
 
@@ -819,9 +842,15 @@ module "function_app" {
   sql_secret_name = "mssql-credentials"
 
   storage_connection_string = module.eda_storage_account.primary_connection_string
-  sql_connection_string     = "Server=tcp:prd-eda-sql01.internal.hbcdev.co.in,1433;Database=OrdersDB;User Id=sqladmin;Password=SQLP@ssword!23!;Encrypt=True;TrustServerCertificate=True;"
+
+  # Connects Function App to Azure SQL Database for order processing
+  sql_connection_string = "Server=tcp:prd-eda-sql01.internal.hbcdev.co.in,1433;Database=OrdersDB;User Id=sqladmin;Password=SQLP@ssword!23!;Encrypt=True;TrustServerCertificate=True;"
+
+  # Queue used for event-driven processing pipeline
   queue_name = "orders-queue"
-  logic_app_callback_url    = module.logic_app.callback_url
+
+  # Callback URL for Logic App integration (event orchestration)
+  logic_app_callback_url = module.logic_app.callback_url
 
   tags = module.rg.tags
 
@@ -832,7 +861,7 @@ module "function_app" {
   ]
 }
 
-# Logic App (consumption) Module
+# Deploys Logic App (Consumption) for workflow orchestration and email notifications using Gmail API connection
 module "logic_app" {
   source = "../../../modules/az-logicapp"
 
@@ -846,6 +875,7 @@ module "logic_app" {
   gmail_api_connection_id   = module.gmail_api_connection.gmail_api_connection_id
   gmail_api_connection_name = module.gmail_api_connection.gmail_api_connection_name
 
+  # Email recipients for notification workflows triggered by Logic App
   notification_emails = [
     "chandranchrist@gmail.com"
   ]
@@ -857,7 +887,7 @@ module "logic_app" {
   ]
 }
 
-# Traffic Manager Module for global routing and failover between primary and DR static web apps
+# Configures Azure Traffic Manager for global routing, health monitoring, and failover between primary and DR Static Web Apps
 module "traffic_manager" {
 
   source = "../../../modules/az-trafficmanager"
@@ -865,43 +895,52 @@ module "traffic_manager" {
   traffic_manager_name = "${local.env}-${local.workload}-tm"
   resource_group_name  = module.rg.resource_group_name
 
-  create_traffic_manager  = true
+  # Enables creation of Traffic Manager profile and primary endpoint for global routing configuration
+  create_traffic_manager = true
+
+  # Creates and registers the primary Static Web App endpoint in Traffic Manager
   create_primary_endpoint = true
 
-  traffic_routing_method = "Priority"
+  # Uses Priority-based routing for failover (primary → secondary/DR if enabled)
+  traffic_routing_method = "Priority" /* Priority/Weighted/Performance/Geographic/Multivalue/Subnet */
 
+  # DNS prefix for Traffic Manager endpoint (forms eda-ui.trafficmanager.net or custom mapped domain)
   dns_relative_name = "eda-ui"
 
+  # DNS TTL for Traffic Manager endpoint caching
   ttl = 30
 
+  # Enables creation of DNS record for Traffic Manager endpoint
   create_dns_record = true
 
   domain        = "hbcdev.co.in"
   hostname_only = "eda"
 
+  # Health probe configuration for endpoint monitoring
   monitor_protocol = "HTTPS"
   monitor_port     = 443
   monitor_path     = "/"
 
-  # primary_endpoint_name = "primary-swa"
-  # primary_custom_domain = "prd-eda.hbcdev.co.in"
-
-  # Use SWA DEFAULT hostname
+  # Primary endpoint configuration (Static Web App in primary region)
   primary_endpoint_name     = "primary-swa"
   primary_endpoint_location = "eastasia"
   primary_swa_priority      = "1"
   primary_swa_enabled       = true
 
+  # Targets default hostname of Static Web App (not custom domain)
   primary_target            = module.static_web_app.default_host_name
   primary_static_web_app_id = module.static_web_app.static_web_app_id
 
+  # DR environment disabled in this deployment
   enable_dr = false
 
+  # GoDaddy DNS integration via Key Vault stored credentials
   key_vault_id        = module.key_vault.key_vault_id
   godaddy_secret_name = "godaddy-apikey"
 
   tags = module.rg.tags
 
+  # Ensures Static Web App is created before Traffic Manager validation
   validation_dependency = module.static_web_app.tm_domain_validation_completed
 
   depends_on = [

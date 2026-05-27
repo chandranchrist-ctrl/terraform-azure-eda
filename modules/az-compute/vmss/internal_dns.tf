@@ -1,3 +1,4 @@
+# Creates private DNS A record mapping internal API hostname to private load balancer IP
 resource "azurerm_private_dns_a_record" "uat_eda_api" {
   count = var.enable_dns_record ? 1 : 0
 

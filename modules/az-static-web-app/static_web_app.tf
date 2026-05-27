@@ -1,4 +1,4 @@
-# Static Web App
+# Creates Azure Static Web App with system-assigned identity and API URL configuration for frontend integration
 resource "azurerm_static_web_app" "static_web_app" {
 
   name                = var.name
@@ -15,6 +15,7 @@ resource "azurerm_static_web_app" "static_web_app" {
     type = "SystemAssigned"
   }
 
+  # Injects backend API endpoint into frontend environment variables
   app_settings = {
     REACT_APP_API_URL = var.api_url
   }

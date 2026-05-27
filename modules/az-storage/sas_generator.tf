@@ -5,9 +5,6 @@ data "azurerm_storage_account_sas" "sas" {
 
   https_only = true
 
-  # start  = timestamp()
-  # expiry = timeadd(timestamp(), "8760h")
-
   start  = timeadd(timestamp(), "-15m")
   expiry = timeadd(timestamp(), "8760h")
 

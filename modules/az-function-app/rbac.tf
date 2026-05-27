@@ -1,3 +1,4 @@
+# Assigns RBAC permissions to Function App managed identity for Key Vault, Blob Storage, and Queue access required for EDA runtime processing
 resource "azurerm_role_assignment" "functionapp_keyvault_secrets_user" {
   scope                = var.key_vault_id
   role_definition_name = "Key Vault Secrets User"

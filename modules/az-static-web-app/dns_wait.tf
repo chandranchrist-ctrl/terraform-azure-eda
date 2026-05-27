@@ -1,4 +1,4 @@
-# Wait for CNAME DNS Propagation (Default SWA Custom Domain)
+# Adds delay to allow CNAME DNS propagation before Static Web App custom domain validation
 resource "time_sleep" "wait_for_cname_dns" {
 
   depends_on = [
@@ -8,7 +8,7 @@ resource "time_sleep" "wait_for_cname_dns" {
   create_duration = "90s"
 }
 
-# WAIT FOR DNS PROPAGATION (TM VALIDATION)
+# Adds delay to allow Traffic Manager validation DNS propagation before proceeding with domain binding
 resource "time_sleep" "wait_for_tm_validation_dns" {
 
   count = var.tm_custom_domain != null ? 1 : 0
@@ -20,7 +20,7 @@ resource "time_sleep" "wait_for_tm_validation_dns" {
   create_duration = "90s"
 }
 
-# WAIT FOR SSL
+# Adds delay to allow SSL certificate provisioning for Traffic Manager custom domain
 resource "time_sleep" "wait_for_tm_ssl" {
 
   count = var.tm_custom_domain != null ? 1 : 0

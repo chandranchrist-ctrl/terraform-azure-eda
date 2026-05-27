@@ -1,6 +1,4 @@
-# ----------------------------
-# CREATE DNS (GoDaddy CNAME → Traffic Manager)
-# ----------------------------
+# Creates GoDaddy CNAME record pointing custom domain to Traffic Manager endpoint for global routing and failover
 resource "null_resource" "cname_dns" {
 
   count = var.create_dns_record ? 1 : 0
@@ -61,9 +59,7 @@ EOT
   ]
 }
 
-# ----------------------------
-# WAIT FOR DNS PROPAGATION
-# ----------------------------
+# Adds delay to allow GoDaddy CNAME DNS propagation before dependent resources continue
 resource "time_sleep" "wait_for_cname_dns" {
 
   count = var.create_dns_record ? 1 : 0

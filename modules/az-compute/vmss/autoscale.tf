@@ -1,3 +1,4 @@
+# Configures automatic VMSS scaling based on CPU utilization thresholds
 resource "azurerm_monitor_autoscale_setting" "vmss" {
   count = var.enable_autoscale ? 1 : 0
 
@@ -16,6 +17,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss" {
       default = var.autoscale_default_capacity
     }
 
+    # Scale-out rule when CPU usage exceeds threshold
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
@@ -30,6 +32,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss" {
         threshold = var.autoscale_cpu_scale_out_threshold
       }
 
+      # Adds one VMSS instance when CPU usage stays above configured threshold
       scale_action {
         direction = "Increase"
         type      = "ChangeCount"
@@ -38,6 +41,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss" {
       }
     }
 
+    # Scale-in rule when CPU usage drops below threshold
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
@@ -52,6 +56,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss" {
         threshold = var.autoscale_cpu_scale_in_threshold
       }
 
+      # Removes one VMSS instance when CPU usage stays below configured threshold
       scale_action {
         direction = "Decrease"
         type      = "ChangeCount"

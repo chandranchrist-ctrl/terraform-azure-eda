@@ -1,4 +1,4 @@
-# Key Vault Secret
+# Fetches GoDaddy API credentials securely from Azure Key Vault (only for public DNS setup)
 data "azurerm_key_vault_secret" "godaddy" {
 
   count = var.enable_external_dns && var.frontend_ip_type == "Public" ? 1 : 0
@@ -7,7 +7,7 @@ data "azurerm_key_vault_secret" "godaddy" {
   key_vault_id = var.key_vault_id
 }
 
-# Decode GoDaddy Credentials
+# Decodes GoDaddy credentials and exposes API key/secret for DNS automation
 locals {
 
   godaddy_credentials = (

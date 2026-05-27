@@ -34,7 +34,6 @@ resource "azurerm_private_dns_zone_virtual_network_link" "links" {
   virtual_network_id    = each.value.vnet_id
 
   /* false = no auto DNS record registration, true = enables auto registration */
-
   registration_enabled = false
 
   /*  false = recommended for production (manual control of DNS records, avoids conflicts);

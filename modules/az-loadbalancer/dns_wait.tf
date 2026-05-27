@@ -1,3 +1,4 @@
+# Adds delay to allow external DNS propagation before dependent resources continue
 resource "time_sleep" "wait_for_dns" {
 
   count = var.enable_external_dns && var.frontend_ip_type == "Public" ? 1 : 0

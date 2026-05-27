@@ -1,3 +1,4 @@
+-- Stores customer laptop order details processed through the EDA platform
 CREATE TABLE Orders (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CustomerName NVARCHAR(100),

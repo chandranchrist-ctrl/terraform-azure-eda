@@ -1,3 +1,4 @@
+# Creates CPU-based VMSS scale-out alert and triggers notification action group
 resource "azurerm_monitor_metric_alert" "vmss_scale_out" {
   count = var.enable_autoscale_notifications ? 1 : 0
 
@@ -29,6 +30,7 @@ resource "azurerm_monitor_metric_alert" "vmss_scale_out" {
   tags = var.tags
 }
 
+# Creates CPU-based VMSS scale-in alert and triggers notification action group
 resource "azurerm_monitor_metric_alert" "vmss_scale_in" {
   count = var.enable_autoscale_notifications ? 1 : 0
 

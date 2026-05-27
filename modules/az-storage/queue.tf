@@ -7,7 +7,6 @@ resource "azurerm_storage_queue" "queues" {
 }
 
 # Storage Queue Properties
-
 resource "azurerm_storage_account_queue_properties" "queue_properties" {
   count = length(var.queues) > 0 ? 1 : 0
 

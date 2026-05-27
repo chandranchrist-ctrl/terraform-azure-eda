@@ -5,18 +5,12 @@
 
 Write-Host "Starting SQL Server configuration..." -ForegroundColor Green
 
-# =========================
-# CONFIG
-# =========================
-
+# Config
 $sqlLogin = "sqladmin"
 $sqlPassword = "SQLP@ssword!23!"
 $dbName = "OrdersDB"
 
-# =========================
-# FIND SQL INSTANCE
-# =========================
-
+# Find SQL Instance
 $instance = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL"
 
 $instanceName = $instance.PSObject.Properties |
@@ -36,37 +30,25 @@ $serviceName = if ($instanceName.Name -eq "MSSQLSERVER") {
 Write-Host "Detected Instance: $($instanceName.Name)"
 Write-Host "Registry Key: $instanceKey"
 
-# =========================
-# ENABLE MIXED MODE
-# =========================
-
+# Enable Mixed Mode
 $regPath = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$instanceKey\MSSQLServer"
 
 Set-ItemProperty -Path $regPath -Name "LoginMode" -Value 2
 
 Write-Host "Mixed Mode enabled."
 
-# =========================
-# RESTART SQL SERVICE
-# =========================
-
+# Restart SQL Service
 Restart-Service -Name $serviceName -Force
 Start-Sleep -Seconds 20
 
 Write-Host "SQL Service restarted."
 
-# =========================
-# VERIFY AUTH MODE
-# =========================
-
+# Verify Auth Mode
 sqlcmd -E -S localhost -Q "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS AuthMode"
 
 Write-Host "0 = Mixed Mode | 1 = Windows Only"
 
-# =========================
-# CREATE SQL LOGIN
-# =========================
-
+# Create SQL Login
 $queryLogin = @"
 IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = '$sqlLogin')
 BEGIN
@@ -83,10 +65,7 @@ sqlcmd -E -S localhost -Q $queryLogin
 
 Write-Host "SQL Login created."
 
-# =========================
-# CREATE DATABASE
-# =========================
-
+# Create Database
 $queryDb = @"
 IF DB_ID('$dbName') IS NULL
 BEGIN
@@ -98,10 +77,7 @@ sqlcmd -E -S localhost -Q $queryDb
 
 Write-Host "Database [$dbName] ready."
 
-# =========================
-# CREATE DB USER + PERMISSIONS
-# =========================
-
+# Create DB User + Permissions
 $queryUser = @"
 USE [$dbName];
 
@@ -117,8 +93,5 @@ sqlcmd -E -S localhost -Q $queryUser
 
 Write-Host "User mapped and permissions assigned."
 
-# =========================
-# COMPLETED
-# =========================
-
+# Completed
 Write-Host "SQL setup completed successfully." -ForegroundColor Green

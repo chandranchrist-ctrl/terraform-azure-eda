@@ -153,13 +153,6 @@ resource "azurerm_windows_virtual_machine" "vm" {
     disk_size_gb         = var.os_disk_size_gb
   }
 
-  # source_image_reference {
-  #   publisher = "MicrosoftWindowsServer"
-  #   offer     = "WindowsServer"
-  #   sku       = var.image_sku
-  #   version   = "latest"
-  # }
-
   source_image_reference {
     publisher = var.image_publisher
     offer     = var.image_offer
