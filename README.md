@@ -126,6 +126,8 @@ terraform-azure-eda
 │
 ├── architecture
 │
+├── docs
+│
 ├── envs
 │   └── staging
 │       ├── certs
