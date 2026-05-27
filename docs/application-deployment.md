@@ -144,8 +144,8 @@ http://<server>/api/order
 ### 2.9 API Verification
 
 ```bash
-curl https://prd-eda-api.hbcdev.co.in/health
-curl https://dr-eda-api.hbcdev.co.in/health
+curl https://prd-eda-api.example.co.in/health
+curl https://dr-eda-api.example.co.in/health
 ```
 Expected:
 
@@ -155,15 +155,15 @@ Healthy
 ### Swagger:
 
 ```
-https://prd-eda-api.hbcdev.co.in/swagger
-https://dr-eda-api.hbcdev.co.in/swagger
+https://prd-eda-api.example.co.in/swagger
+https://dr-eda-api.example.co.in/swagger
 ```
 
 ### 2.10 Test API POST Request
 
 ```powershell
 Invoke-RestMethod `
--Uri "http://prd-eda-api.hbcdev.co.in/api/order" `
+-Uri "http://prd-eda-api.example.co.in/api/order" `
 -Method POST `
 -ContentType "application/json" `
 -Body '{
@@ -309,29 +309,29 @@ http://localhost:5000/api/order
 
 ### 6.1 API Health
 ```
-curl https://prd-eda-api.hbcdev.co.in/health
+curl https://prd-eda-api.example.co.in/health
 ```
 
 ### 6.2 Swagger
 ```
-https://prd-eda-api.hbcdev.co.in/swagger
+https://prd-eda-api.example.co.in/swagger
 ```
 
 ### 6.3 Static Web App
 
 ### Production
 ```
-https://prd-eda.hbcdev.co.in/
+https://prd-eda.example.co.in/
 ```
 
 ### DR
 ```
-https://dr-eda.hbcdev.co.in/
+https://dr-eda.example.co.in/
 ```
 
 ### 6.4 Traffic Manager
 ```
-https://eda.hbcdev.co.in/
+https://eda.example.co.in/
 ```
 
 ---
