@@ -25,21 +25,31 @@ The platform is designed to simulate a scalable enterprise-grade cloud architect
 
 <img width="1934" height="742" alt="image" src="https://github.com/user-attachments/assets/849a12ec-f8d5-4b87-a2f7-06bff542b384" />
 
+Explanation:
+
+1. This diagram shows the overall flow of the application from user to backend systems. Requests from the Static Web App go through Traffic Manager and are routed to the appropriate environment. 
+2. The VMSS API, Function App, Queue, and SQL work together to process and store data in an event-driven flow, with Logic App handling external notifications.
+
 ---
 ## Multi-Region Azure Infrastructure Architecture with Disaster Recovery
 
-<img width="839" height="672" alt="image" src="https://github.com/user-attachments/assets/6e624819-b720-49a5-b20f-05ebc0920362" />
-
-
-## Simplified Infrastructure Architecture
-
 <img width="2250" height="1642" alt="image" src="https://github.com/user-attachments/assets/79f481a3-63a2-4145-a4d6-e0c38d3fffcb" />
+
+Explanation: 
+1. This diagram represents the deployment of the application across Primary and DR regions.
+2. Traffic Manager distributes traffic between regions, ensuring high availability.
+3. Each region contains identical services (SWA, VMSS, Function App, SQL, Storage) to support seamless failover in case of failure.
 
 ---
 
 ## DR Failover Workflow Architecture
 
 <img width="1036" height="672" alt="image" src="https://github.com/user-attachments/assets/b120b0eb-bd0a-4b72-9246-be44ae993fc0" />
+
+Explanation: 
+
+1. This diagram explains the failover process when the primary region becomes unavailable.
+2. Traffic Manager detects failure and automatically redirects traffic to the DR region. The DR environment takes over all services to ensure continuous application availability with minimal downtime.
 
 ---
 
