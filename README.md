@@ -26,6 +26,10 @@ The platform is designed to simulate a scalable enterprise-grade cloud architect
 <img width="1934" height="742" alt="image" src="https://github.com/user-attachments/assets/849a12ec-f8d5-4b87-a2f7-06bff542b384" />
 
 ---
+## Multi-Region Azure Infrastructure Architecture with Disaster Recovery
+
+<img width="839" height="672" alt="image" src="https://github.com/user-attachments/assets/6e624819-b720-49a5-b20f-05ebc0920362" />
+
 
 ## Simplified Infrastructure Architecture
 
